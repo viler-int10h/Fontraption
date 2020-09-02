@@ -1,0 +1,346 @@
+                         ±Ü'
+                    þ   ÞÜ'                      þÜ    ø             Ü
+   Þþ                ßÜ ÛÜ'          þÜù      Ýþ ßþÜß               Þ±
+þÜÜÛÛÛÜÛÜÝÜþÜÛÜþ   Þ   Û°            ÜÛù      °Û° Üß ßþ              ÞÄ.
+   À²Û Á þÜ Üß    Üþ²ÞÛÜÛÛÜÜÜÍ     ÜÛÌù ßþÜÜ, ÛÜÜÜÍ'  Ü      ³    ÛÄ.
+   °ÞÝ Ü ÜÛÛÜ       _Û  Þ² ßþÜ       ±ÛÞÛ þÜÜ  ßßÛÛ²ßþß ßþ  Ü±Üß   ×   ³ÛÄ.
+"ËÛ  ÞÛß °ß²Ü Üþ ðÛ þÛÛ  ²ÛßÜ Ü Ü°ÛÜ²Ûß-ÛÛÜ   ÞÛß  ²Ý ÜÛß ² ÛÜÛÄ  ºÛßþ-
+"Ë²² ß ²Ü  ÜÛßÜ   Þ² ÝÛÜ ÞÝÜÛ± ÞÛÃ ÝÛ -Û ßÛ  ²ß  ÞÝ ÜÛÝ  ±Û  ßÛÜ  ÞÛßþ-
+"ËÛ     ßÛ²ß ÜÛ²Ü  Ý±  Û°ß²Ûß    Û   ²ÝÜ Þ±  ÛÜßÛÝ þÛÆÄ  Û¿ þ±ÛÜßÛßÛÜ Ûßþ-
+ þÜ°Û²ÜÜ  þß  Û± ßÛÜÛÝ ÞÛÄÜÛþÛÜ  ±Ý  ù¶Ýþ ß²ßÛÜÌÙßÜß  ±ÆÄ ßÄ² ÜÛÜ ÛÝ-ßÛÛþ-
+   Ûßþß ßþ  ÜÛÞ   ßÛÜ Þ²Ä Û ÙßÛ_ß ù¶²   Û "ß Þ²þ ²ÆÄ   ÛÛß Þ ÛÜ   ÛÛÜ
+   ÞÛ        Ü²Ý    Üßþ ÛÄÞ²   ÙßÜ_ ùÞÞß Ý±Ý   ÄÜÛþ Û   þ" þ    ÛÜ   Þ ß
+   ß²Ý -V!   ÜÛ     þ   Þ  Ýß     ø    þ  ßÛþ    Þ²þ Ý           Þ²    ±
+   þÞÜ-      Þ ß        Ø  þ               Ø     ÄÛ  |           Û±
+    ÛÜ-      Ø                                    ×               Þ
+    ²Ü-        úù[  F O N T R A P T I O N  ]ùú  Ø   ùCþRþTþCù   À_
+    Þ               úù[  v1.0 - 5/2019  ]ùú
+    Ø
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                                 WHAT'S THIS?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+There are many VGA text mode font editors out in the wild: the "classic" one
+is FONTEDIT, published in PC Magazine all the way back in 1988.  They're all
+functional, but either lack some niceties or have certain annoyances, so
+here's yet another go at the concept.
+
+Fontraption's key features:
+
+ * Edit two fonts at a time, using tabs to keep the UI consistent
+ * Flexible clipboard transfer of full/partial characters or character ranges
+ * Various block manipulation functions: flip X/Y, fill/erase, invert, slide
+ * Grab any of the built-in fonts from the VGA BIOS ROM
+ * Save/load as raw binary data; import/export BMP, XBIN and COM (plain/TSR)
+ * Supports any font height that VGA text mode can handle, up to 32 lines
+ * Preview your font in 40 or 80 columns (8 or 9 pixels per column)
+ * Uses pure text mode for speed; runs on any VGA-capable system (8088 and up)
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                             SYSTEM REQUIREMENTS
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+ * IBM PC or compatible
+ * VGA-compatible video
+ * DOS 3.0+
+ * 224 KB of free conventional RAM
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                              DOSBOX USAGE NOTES
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+To run this correctly in DOSBox, you'll want to do the following:
+
+1. Use a CURRENT (SVN) build of DOSBox, not 0.74 (or 0.74-2).  The latest
+   DOSBox codebase fixes many issues related to VGA font widths, aspect
+   correction, scaling, cursor handling, and so on.
+
+2. Set "machine" to "vgaonly" in your DOSBox config file, otherwise 9-dots-
+   per-column mode (F8) is disabled.  9 dots is the default with real (S)VGA
+   hardware, and in DOSBox's "vgaonly" mode, but the "svga"/"vesa" machines
+   force all text modes to 8 for some reason.
+
+   If you REALLY want to, you can force Fontraption to allow 9-dot mode
+   regardless of DOSBox's machine type, by pressing Ctrl+Alt+9.  Just don't 
+   expect things to look right if you do that - this option exists in case 
+   DOSBox changes its behavior in the future, or for certain forks (like 
+   DOSBox-X) that control it with a separate config option.
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                                 STARTING UP
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Optionally, up to two filenames can be specified on the command line:
+
+   FRAPT [file1 [file2]]
+
+If they appear to be valid font files, they will be loaded as fonts 1 and 2
+respectively.  If you leave out one or both filenames, the VGA font active at
+runtime will be used instead.
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                              SUPPORTED FORMATS
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Fontraption's native font format is raw binary data, as used by the VGA BIOS.
+256 characters are stored sequentially, with 8 bits (1 byte) per scanline;
+characters may contain up to 32 scanlines each.
+
+The sample fonts use the file extension .Fxx, where 'xx' is the number of
+scanlines per character.  This is just a convention: the program doesn't
+enforce or rely on this naming scheme in any way, so feel free to use any
+extension that strikes your fancy.
+
+Other formats may be exported and imported:
+
+ * XBIN (fonts embedded in text mode images)
+
+ * BMP (monochrome only, i.e. 1 bit per pixel): the image is treated as a
+   16-by-16 character grid, so its width should be 128 pixels, and the height
+   16 times the number of scanlines per character.
+
+ * COM: as you might guess, this lets you set the active font from the DOS
+   prompt.  The executable can be a one-off font loader, or a TSR that makes
+   your font 'stick' whenever a text mode is set through the BIOS.
+   Other than Fontraption's own .COM formats, files produced by FONTEDIT are
+   also supported (import only).
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                             GUIDE TO OPERATIONS
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Hopefully the interface does a decent job of exposing the various functions,
+and most of them are self-explanatory, so this section shouldn't really be
+needed.  But, for the sake of completeness...
+
+
+ * STATUS BAR: the bottom row on the screen.  Notices, warnings, prompts, and
+   sub-menus go here, so keep your eyes peeled.
+
+
+ * FONT TABS: you get two of them, at the top of the working area on the left.
+   Nothing unexpected here; only the font's file name (if any), and an
+   asterisk in case of unsaved changes.  Simply hit the "1" or "2" keys to
+   switch the active font.
+
+
+ * THE CHARACTER EDIT BOX: the grid on the left, where you make the magic
+   happen.  These controls are specific to the Edit box:
+
+      Cursor keys:    Move the cursor around
+
+      Space/Enter:    Toggle the indicated pixel on/off
+
+      Ctrl+Cursor:    Drag the current pixel state along with the cursor (with
+                      some very old BIOSes, RShift replaces Ctrl)
+
+      LShift+Cursor:  Mark a selection - (re)define the rectangular area
+                      affected by clipboard and block operations
+
+      _ or | :        Create a horizontal or vertical guide respectively, at
+                      the cursor position (press again to clear)
+
+
+ * THE CHARACTER SET BOX, aka the Font box: displays all 256 characters on
+   the right side of the working area.  Any characters with unsaved changes
+   are highlighted.
+
+   The characters may be padded (for font heights up to 16) or chopped up (for
+   taller fonts), to keep the entire UI more or less consistent.  The upshot
+   is that row heights are misrepresented here, unless your font is exactly
+   16 lines tall.  To get an accurate picture use the Preview feature (F10).
+
+   Fontbox-specific controls:
+
+      Cursor keys:    Navigate through the characters
+
+      Space/Enter:    Pick a character to edit (feed it to the Edit box)
+
+      LShift+Cursor:  Select a range of characters, to be affected by
+                      clipboard and block operations
+
+
+ * GLOBAL NAVIGATION CONTROLS:
+
+      TAB:            Switch between the Character Edit and Font boxes
+
+      G:              Go to character - prompts for a keypress (or a
+                      character code entered with Alt+the numeric keypad)
+                      and selects that character for editing
+
+      + or -:         Go to the next/previous character, respectively
+
+
+ * FONT/FILE FUNCTIONS:
+
+      Ctrl+S / F2:    Save font (raw binary format)
+
+      Ctrl+L / F3:    Load font (raw binary format)
+
+      Ctrl+R:         Reload the current font - reverts to the last saved
+                      version
+
+      Ctrl+G:         Get VGA ROM font - prompts for a font to be loaded from
+                      the VGA firmware, in one of the standard sizes (8x8,
+                      8x14, 9x14, 8x16, 9x16).  This just grabs the bitmap
+                      patterns; the displayed width (8/9 dots per character)
+                      must be set with F8
+
+      Ctrl+I:         Import a supported file type (.COM/.BMP/XBIN); see
+                      "supported formats" above.  The filename of an imported
+                      font is left blank - to assign a name, save as a raw
+                      binary font
+
+      Ctrl+E:         Export a supported file type - prompts for a format
+                      (.COM/.BMP/XBIN).  For .COM, you also select for which
+                      text modes the font should persist:
+
+                      - "None" creates a non-TSR program, which just sets the
+                        font and terminates
+
+                      - The others will generate a TSR that applies the font
+                        whenever the selected modes are set: 40 columns, 80
+                        columns, or both.  If a TSR is already installed, run
+                        it (or any other Fontraption TSR!) again to uninstall.
+
+
+ * HEIGHT ADJUSTMENT - these operations affect the ENTIRE font:
+
+      F4:             Change font height (1 to 32 lines): adjust with the Up/
+                      Down keys, ENTER accepts, ESC cancels; lines will be
+                      either added or deleted at the bottom
+
+      F5:             Delete the line at the cursor position (and reduce the
+                      font height by 1)
+
+      F6:             Insert a blank line at the cursor position (and increase
+                      the font height by 1)
+
+      F7:             Duplicate the line at the cursor position (and increase
+                      the font height by 1)
+
+
+ * DISPLAY OPTIONS:
+
+      F8:             Select the width of the character cell, either 8 or 9
+                      pixels (see "DOSBox Usage Notes" above if this option is
+                      greyed out).
+                      This applies to the display on-screen, and is reflected
+                      in the edit box.  In 9-dot mode the ninth column isn't
+                      editable: the VGA blanks it out for most characters; for
+                      the box/block chars at C0-DF, it duplicates the 8th.
+
+      F9:             Palette - choose from the list to change Fontraption's
+                      color scheme.  Some variety for your eyeballs :)
+
+      F10:            Enter Preview mode - shows a test screen for the current
+                      font.  The font's true height IS applied, so you'll want
+                      to go here for an accurate idea of the result.
+                      Controls in preview mode:
+
+                      Left/Right:       Change background color
+
+                      Up/Down:          Change foreground color
+
+                      F10:              Toggle 40 or 80 column mode
+
+                      T:                Edit the top line of preview text
+                                        (ENTER accepts, ESC cancels)
+
+                      Any other key:    Return to the editor
+
+
+ * GLOBAL EDIT FUNCTIONS:
+
+      Ctrl+A:         Select All - highlights the entire contents of the
+                      active box
+
+      Ctrl+D:         Deselect - clears the selection in the active box
+
+      Ctrl+X:         Cut selected block/range to the clipboard
+
+      Ctrl+C:         Copy selected block/range to the clipboard
+
+      Ctrl+V:         Paste from clipboard - may also be done between the
+                      two fonts (even with different heights), but only if the
+                      clipboard contents match the current box: if you copied
+                      a range from the Font box, it can't be pasted in the
+                      Edit box, and vice versa
+
+      Ctrl+Z:         Undo - reverses the last change you made, no matter how
+                      large (keep in mind that you can only retrace ONE step)
+
+
+ * BLOCK OPERATIONS - the way these functions work may not be 100% intuitive,
+   so in short: if there's no selection, they apply to the current character.
+   If a selection exists, they apply to the selected pixels (in the Edit box)
+   or to the selected character range (in the Font box).
+
+   The exception is "Slide", which only works with full characters (so in the
+   Edit box, any selection is ignored and the entire character is affected).
+
+      E:              Erase - overwrites block/range with OFF (background)
+                      pixels
+
+      F:              Fill - overwrites block/range with ON (foreground)
+                      pixels
+
+      I:              Invert - swaps background with foreground throughout
+                      the selection
+
+      X:              Flip X - mirrors the selection horizontally
+
+      Y:              Flip Y - mirrors the selection vertically
+
+      S:              Slide - use the arrow keys to reposition the current/
+                      selected character(s); pixels moved off the bitmap's
+                      edge will wrap around.  Press any other key to return to
+                      the editor
+
+
+ * FINISHING UP:
+ 
+      ESC:            Exits Fontraption.  If you have unsaved changes in 
+                      either font, you'll be reminded and get the chance to 
+                      chicken out.
+
+      LShift+ESC:     As above, but also retains the active font on the screen
+                      after you quit to DOS (like FONTEDIT).
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                                 LIMITATIONS
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+ * NO MOUSE SUPPORT.  Personally I don't really consider this a limitation -
+   drawing with the mouse in text mode is something I've always found clumsy
+   and imprecise, and I've ditched one editor entirely because it let me draw
+   ONLY with the mouse.  The keyboard is just better here, trust me. ;)
+
+ * Editing fonts taller than 16 scanlines isn't really an ideal experience,
+   since it forces the UI into 50-line mode (so the taller Edit box can fit on
+   the screen without scrolling).  This squashes down the Font box, so only
+   the top 8 scanlines of each character are shown.
+
+   This is a compromise, and I'm not thrilled with it... but the only real
+   alternative would be one of those weird VESA text modes, which would
+   sacrifice compatibility (and slow down mode changes), or a graphics mode
+   which would slow things down period.  Editing >16-line fonts is still fully
+   doable anyway, even if you have to hit the Preview key a bit more often.
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                               CREDITS + GREETS
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+ Written by VileR     /   THANKS: anormal, genju, harekiet, hell mood, keropi,
+(viler@int10h.org)   /     krille, maze, reenigne, ripsaw8080, scali, trixter
+
+
