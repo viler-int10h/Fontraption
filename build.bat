@@ -1,0 +1,1 @@
+for %%A in (*.asm) do (fasm %%A -s %%~nA.fas && listing -a %%~nA.fas %%~nA.lst && del %%~nA.fas)
