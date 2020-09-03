@@ -66,6 +66,7 @@
     pop    di  ;3;             ; ...(gotta clean this one up afterwards)
     mov    bx, 8
     call   font_cleanup.v
+    xor    bl, bl              ; reset block specifier; fixes ET4K (+others?)
     mov    ax, 1104h           ; LOAD ROM 8x16 CHARACTER SET (VGA)
     int    10h
     call   bp                  ; ...8x16 font to top.8x16
