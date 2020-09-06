@@ -2,8 +2,8 @@
 A tiny but powerful VGA text mode font editor for DOS.  
 
 - Assemble w/build.bat (FASM required)
-- Large font collection available separately at [TBA]
 - See [FRAPT.TXT](FRAPT.TXT) for full documentation
+- **A large collection of fonts is available separately: [VGA text mode fonts](https://github.com/viler-int10h/vga-text-mode-fonts/releases)**
 
 Key features:
 
