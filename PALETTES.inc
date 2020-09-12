@@ -31,6 +31,8 @@ pal_entries:
    db 1Bh,1Dh,1Eh, 15h,17h,18h, 0Dh,0Fh,10h, 05h,06h,06h,1,'Papirosa',0
    db 07h,06h,0Bh, 0Dh,08h,1Dh, 18h,12h,12h, 22h,1Dh,08h
    db 2Dh,27h,27h, 22h,32h,32h, 37h,32h,1Dh, 3Fh,3Fh,3Fh,1,'Arrakis',0
+   db 0Ch,0Ch,0Ch, 07h,01h,01h, 0Eh,09h,05h, 26h,19h,06h
+   db 19h,12h,0Bh, 33h,11h,00h, 28h,02h,02h, 34h,23h,09h,8,'Rusty Nuts',0
    db 00h,00h,00h, 00h,00h,2Ah, 15h,15h,15h, 2Ah,00h,00h
    db 00h,2Ah,2Ah, 2Ah,2Ah,2Ah, 3Fh,3Fh,15h, 3Fh,3Fh,3Fh,5,'Boreland',0
    db 00h,00h,00h, 00h,00h,2Ah, 2Ah,00h,00h, 00h,2Ah,2Ah
@@ -47,6 +49,8 @@ pal_entries:
    db 3Fh,08h,10h, 20h,20h,20h, 00h,27h,05h, 3Eh,1Fh,00h,2,'Volcanic',0
    db 26h,26h,33h, 33h,26h,26h, 19h,0Ch,0Ch, 26h,19h,19h
    db 11h,11h,19h, 1Eh,1Eh,1Eh, 11h,00h,00h, 3Fh,35h,35h,9,'Vogonic',0
+   db 00h,00h,0Dh, 00h,09h,2Ah, 16h,09h,39h, 21h,00h,0Fh
+   db 37h,00h,00h, 39h,1Ch,00h, 2Ch,09h,39h, 3Eh,3Bh,23h,0,'Turbo',0
    db 00h,07h,01h, 00h,10h,00h, 00h,20h,10h, 20h,08h,08h
    db 00h,38h,00h, 30h,18h,18h, 00h,2Ch,23h, 18h,38h,28h,0,'Battery Leak',0
    db 13h,00h,09h, 00h,00h,00h, 13h,21h,13h, 24h,00h,17h

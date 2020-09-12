@@ -68,7 +68,7 @@ macro memcp srcptr, destptr, words {    ; Memory copy: SI, DI, number of words
   MODIFY_UI8        equ VRAM_UI8_FONT+(GRID1*32)
   ARROWS            equ 27,24,25,26
 
-  NUM_PALETTES      equ 23                        ; Palette stuff
+  NUM_PALETTES      equ 25                        ; Palette stuff
   NUM_ATTRMAPS      equ 10
   PAL_GETMAP        equ 24
   PAL_GETNAME       equ 25
@@ -199,7 +199,7 @@ org 100h
     .yes_no:     db ' (y/N)?',0
     .exists:     db 'File exists! Overwrite (y/N)?',0
     .stored:     db 'Stored in clipboard',0
-    .swapped:    db 'Chars ______ swapped',0
+    .swapped:    db 'Chars ___',29,'___ swapped',0
     .height:     db ' Height:',0
     .lines:      db ' lines ',0
     .noname:     db '<NoName>',0
