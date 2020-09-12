@@ -65,9 +65,9 @@ To run this correctly in DOSBox, you'll want to do the following:
    force all text modes to 8 for some reason.
 
    If you REALLY want to, you can force Fontraption to allow 9-dot mode
-   regardless of DOSBox's machine type, by pressing Ctrl+Alt+9.  Just don't 
-   expect things to look right if you do that - this option exists in case 
-   DOSBox changes its behavior in the future, or for certain forks (like 
+   regardless of DOSBox's machine type, by pressing Ctrl+Alt+9.  Just don't
+   expect things to look right if you do that - this option exists in case
+   DOSBox changes its behavior in the future, or for certain forks (like
    DOSBox-X) that control it with a separate config option.
 
 
@@ -167,7 +167,7 @@ needed.  But, for the sake of completeness...
                       clipboard and block operations
 
 
- * GLOBAL NAVIGATION CONTROLS:
+ * MISCELLANEOUS/NAVIGATION CONTROLS:
 
       TAB:            Switch between the Character Edit and Font boxes
 
@@ -175,7 +175,10 @@ needed.  But, for the sake of completeness...
                       character code entered with Alt+the numeric keypad)
                       and selects that character for editing
 
-      + or -:         Go to the next/previous character, respectively
+      W:              Swap the current character (in the Edit box) with the
+                      character at the Font box cursor
+
+      - or +:         Select the previous/next character, respectively
 
 
  * FONT/FILE FUNCTIONS:
@@ -243,6 +246,10 @@ needed.  But, for the sake of completeness...
       F10:            Enter Preview mode - shows a test screen for the current
                       font.  The font's true height IS applied, so you'll want
                       to go here for an accurate idea of the result.
+                      Also includes a tiled view of the selected character
+                      in a repeating pattern, which is useful for area-
+                      filling bitmaps and that sort of thing.
+
                       Controls in preview mode:
 
                       Left/Right:       Change background color
@@ -306,9 +313,9 @@ needed.  But, for the sake of completeness...
 
 
  * FINISHING UP:
- 
-      ESC:            Exits Fontraption.  If you have unsaved changes in 
-                      either font, you'll be reminded and get the chance to 
+
+      ESC:            Exits Fontraption.  If you have unsaved changes in
+                      either font, you'll be reminded and get the chance to
                       chicken out.
 
       LShift+ESC:     As above, but also retains the active font on the screen
