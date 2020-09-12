@@ -85,6 +85,7 @@
     dw     2247h                         ; G
     dw     1749h                         ; I
     dw     1F53h                         ; S
+    dw     1157h                         ; W
     dw     2D58h                         ; X
     dw     1559h                         ; Y
     dw     1E01h                         ; Ctrl+A
@@ -137,6 +138,7 @@
     dw     ed_goto_char                  ; G
     dw     ed_block.invert               ; I
     dw     ed_slide                      ; S
+    dw     ed_swap                       ; W
     dw     ed_block.flip_x               ; X
     dw     ed_block.flip_y               ; Y
     dw     ed_mark_all                   ; Ctrl+A
@@ -881,6 +883,52 @@
   .end_input:
     pop    bp
     call   update_preview_inp
+    ret
+
+;----------------------------------------------------------------------------
+  ed_swap:       ; Swap selected character w/fontbox cursor (hover) character
+;----------------------------------------------------------------------------
+    mov    al, [state.currchar]
+    mov    ah, [state.hoverchar]
+    cmp    al, ah
+    jne    @f                            ; same char? do nothing
+    ret
+
+@@: push   ax  ;1;                       ; save character codes
+    mov    bp, .copy
+    call   font_point_to_char            ; SI-> font;
+    mov    bx, di                        ; BX-> currchar
+    mov    dx, si                        ; DX-> font
+    mov    si, di
+    mov    di, scratch
+    push   di  ;2;                       ; current char @ scratch
+    call   bp
+    mov    si, dx
+    call   font_point_to_char.hover      ; SI-> font; DI-> hoverchar
+    push   di  ;3;                       ; hover char @ font
+    mov    si, di
+    mov    di, bx
+    call   bp                            ; current char <= hoverchar
+    pop    di  ;2;
+    pop    si  ;1;
+    call   bp                            ; hover char <= copy of current char
+
+    mov    di, txt.swapped + 6           ; compose message
+    mov    dh, OP_STOSB
+    pop    ax  ;0;                       ; AL = character code #1
+    mov    bh, ah                        ; BH = character code #2
+    call   str_dec_byte
+    inc    di
+    mov    al, bh
+    call   str_dec_byte
+    mov    si, txt.swapped               ; report
+    call   screen_status_msg
+
+    call   ed_apply_change               ;   ONE
+    jmp    ed_apply_change.hover         ;   TWO
+
+  .copy:
+    memcp  si, di, 16                    ; single char
     ret
 
 ;-----------------------------------------------------------------------------

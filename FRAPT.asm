@@ -199,6 +199,7 @@ org 100h
     .yes_no:     db ' (y/N)?',0
     .exists:     db 'File exists! Overwrite (y/N)?',0
     .stored:     db 'Stored in clipboard',0
+    .swapped:    db 'Chars ______ swapped',0
     .height:     db ' Height:',0
     .lines:      db ' lines ',0
     .noname:     db '<NoName>',0
@@ -249,12 +250,9 @@ org 100h
                  db 'ÇÄ×ÄÄ¶ÆÍØÍÍµÌÍÎÍÍ¹ÃÄÅÄÄ´',0
                  db 'ÓÄÐÄÄ½ÔÍÏÍÍ¾ÈÍÊÍÍ¼ÀÄÁÄÄÙ',0
     .math:       db '³xüúëxðäûxýü',0
-    .final1:     db 046,250,249,007,009,004,248,004,009,007,249,250,046
-                 db '  Width/height/alignment:', 0
-    .final2:     db 095,022,254,223,220,221,219,222,220,223,254,022,095
-                 db '  H: ',0, "0'AIiMmTwZ" ;10
-    .final3:     db 017,030,031,016,027,024,025,026,018,029,023,174,175
-                 db '  V: ',219,0, 'xXgdy-_"$ ' ;10
+    .final1:     db 'Char. ', 0,  '   H/V Alignment:', 0
+    .final2:     db '#___  ', 0,  'H:',219,0, "0iImTwZ"    ; 7
+    .final3:     db 'Tiled:', 0,  'V:',0, 'xXyd_"$ '       ; 8
 
 ; Attribute pointer + ASCIIZ string- - - - - - - - - - - - - - - - - - - - - -
 
@@ -262,11 +260,11 @@ org 100h
     dw att.prog_name
     db 'Fontraption ',0
     dw att.version
-    db ' v1.0',0
+    db ' v1.1',0
     dw att.ver_separator
     db ' þ ',0
     dw att.ver_date
-    db '05/2019 ',0
+    db '09/2020 ',0
 
 ; Some dual-screen locations, no strings attached- - - - - - - - - - - - - - -
 
@@ -339,8 +337,7 @@ org 100h
        db 44,17, BK2,'^A',SPC2,'Select all',0
        db 64,12, 'Char/Font',(SNK or 3),'TAB',0
        db 64,13, 'Goto char',(SNK or 5),'G',0
-       db 64,14, 'Next char',(SNK or 5),'+',0
-       db 64,15, 'Prev char',(SNK or 5),'-',0
+       db 64,15, 'Prev/Next',(SNK or 3),'-/+',0
        db 64,18, 'Erase',(SNK or 9),'E',0
        db 64,19, 'Fill',(SNK or 10),'F',0
        db 64,20, 'Invert',(SNK or 8),'I',0
@@ -351,7 +348,7 @@ org 100h
 
   loc_f_editbox:
        db 44,13, 'Draw',SNK1,'Space/',17,1,0C4h,1,0D9h,0
-       loc_formatted_count = 21
+       loc_formatted_count = 20
 
   loc_f_fontbox:
        db 44,13, 'Edit',0
@@ -372,7 +369,8 @@ org 100h
        .dup_ln:   db 64, 4, 'Dup line',(SNK or 5),'F7',0
        .ins_ln:   db 64, 3, 'Insert line',SNK2,'F6',0
        .del_ln:   db 64, 2, 'Delete line',SNK2,'F5',0
-       loc_f_stateful_count = 12
+       .swap:     db 64,14, 'Swap chars',(SNK or 4),'W',0
+       loc_f_stateful_count = 13
 
 ;-----------------------------------------------------------------------------
 ;###############################  VARIABLES  #################################
@@ -413,8 +411,8 @@ align 2
    .pal_attrmap:   dw ? ;*         ; number of attr_map for current palette
    .palette:       dw ? ;*         ; current palette
    .currbox:       db ?            ; active box: 0=edit box, 1=charset box
-   .currchar:      dw ? ;*         ; current active character (both fonts)
-   .hoverchar:     dw ? ;*         ; temp version of above
+   .currchar:      dw ? ;*         ; current selected character (both fonts)
+   .hoverchar:     dw ? ;*         ; character under cursor in font box
    .guide_cols:    db ?            ; guide columns (8-bit mask)
    .guide_rows:    times 32 db ?   ; guide rows: 0=clear, FF (not 0)=set
    .chrmark_rng_h: dw ?            ; editbox mark cols; from (HI), to (LO)

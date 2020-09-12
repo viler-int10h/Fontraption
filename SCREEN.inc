@@ -149,6 +149,15 @@
 .known_h:                                ;     (call here if already set)
     push   bp                            ;     + save it for returning
 
+  ; Prepare current character number (for tiling)
+
+    mov    al, [state.currchar]          ; tile current character
+    mov    di, pvw.final2 + 1            ; target for decimal codepoint
+    mov    dh, OP_STOSB                  ; no attributes
+    call   str_dec_byte                  ; write it
+
+  ; Draw to desired page
+
     push   es                            ; I/O target = screen: ES -> VGA text
     call   screen_init_text_IO           ;     mode RAM, BX = attr_map index
 
@@ -214,7 +223,7 @@
     sub    di, ROW*2+14*2
     call   bx  ;draw_attr_asc0.x
 
-    mov    dx, ROW*2-12*2
+    mov    dx, ROW*2-13*2
     cmp    bp, 22                        ; skip separating row if height>22
     ja     @f
     add    dx, ROW
@@ -222,19 +231,27 @@
 
   ; Draw last 3 rows
 
-    call   bx  ;draw_attr_asc0.x         ; SI = pvw.final1
-    mov    cl, 2
-.l: add    di, ROW-38*2
-    call   bx  ;draw_attr_asc0.x         ; SI = pvw.final2/3
-    push   cx                            ; draw 10 'alignment test' chars
-    mov    cl, 10
-@@: mov    al, 219
+    mov    dx, 3                         ; SI = pvw.final1
+.l: call   bx  ;draw_attr_asc0.x
+    inc    di
+    inc    di
+    mov    al, [state.currchar]          ; tile current character
+    mov    cl, 13
+    call   draw_char_CX_times
+    add    di, 3*2 + 1
+    call   bx  ;draw_attr_asc0.x         ; print reminder of line
+    cmp    dl, 3                         ; top row only:
+    je     .m                            ;    skip
+    mov    cl, 9                         ; else:
+    sub    cl, dl                        ;    draw (9-DL) 'alignment test'
+@@: mov    al, 219                       ;    characters
     stosw
     lodsb
     stosw
     loop   @b
-    pop    cx
-    loop   .l
+.m: add    di, ROW-40*2                  ; next row
+    dec    dx
+    jnz    .l
 
   ; Do single-char fixups
 
@@ -824,6 +841,17 @@
     mov    al, 33
     sub    al, [di]
     test   al, 100000b
+    call   bp
+
+  ; SWAP CHARS: enabled if current char != hover char
+
+    mov    al, byte[state.currchar]
+    mov    ah, byte[state.hoverchar]
+    cmp    al, ah
+    mov    al, ah
+    jne    @f                            ; invert sense of zero flag (UGLY)
+    inc    al
+@@: xor    al, ah
     call   bp
 
     call   update_checkmark              ; update this too while we're at it
