@@ -14,7 +14,7 @@
    þÞÜ-      Þ ß        Ø  þ               Ø     ÄÛ  |           Û±
     ÛÜ-      Ø                                    ×               Þ
     ²Ü-        úù[  F O N T R A P T I O N  ]ùú  Ø   ùCþRþTþCù   À_
-    Þ               úù[  v1.0 - 5/2019  ]ùú
+    Þ               úù[  v1.1 - 9/2020  ]ùú
     Ø
 
 
@@ -344,10 +344,23 @@ needed.  But, for the sake of completeness...
 
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                               VERSION HISTORY
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+ v1.1 (2020-09-12):
+   * Fixed garbled UI font with some video BIOSes (Tseng Labs ET4000)
+   + Preview: Added tiled view of the currently selected character
+   + Editor: You can now directly swap two characters with the 'W' key
+   + Added a couple of new palettes for good measure
+
+ v1.0 (2019-05-22):
+   * First public release
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                CREDITS + GREETS
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
  Written by VileR     /   THANKS: anormal, genju, harekiet, hell mood, keropi,
 (viler@int10h.org)   /     krille, maze, reenigne, ripsaw8080, scali, trixter
-
 
