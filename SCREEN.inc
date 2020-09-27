@@ -295,7 +295,7 @@
     call   draw_attr_asc0
     mov    al, 0B3h                      ; '³' vertical line
     stosb
-    mov    di, 63*2                      ; spaces before version string
+    mov    di, 62*2                      ; spaces before version string
     stosb
     inc    di
     mov    cl, 3

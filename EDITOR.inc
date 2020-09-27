@@ -894,7 +894,8 @@
     jne    @f                            ; same char? do nothing
     ret
 
-@@: push   ax  ;1;                       ; save character codes
+@@: call   font_update_undo_buf
+    push   ax  ;1;                       ; save character codes
     mov    bp, .copy
     call   font_point_to_char            ; SI-> font;
     mov    bx, di                        ; BX-> currchar
