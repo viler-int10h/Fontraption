@@ -322,11 +322,11 @@ org 100h
     dw att.prog_name
     db 'Fontraption ',0
     dw att.version
-    db ' v1.11',0
+    db ' v1.12',0
     dw att.ver_separator
     db ' þ ',0
     dw att.ver_date
-    db '09/2020 ',0
+    db '02/2024 ',0
 
 ; Some dual-screen locations, no strings attached- - - - - - - - - - - - - - -
 
