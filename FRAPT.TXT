@@ -348,6 +348,7 @@ needed.  But, for the sake of completeness...
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
  v1.12 (2024-02-15):
+   * Add MIT license
    * Bugfix: supports the PS/2 Model P70 plasma display
    * Bugfix: should now work on VirtualBox 6.x
    * Add debug option to single-step VGA initialization (set DEBUGMODE to 1)
