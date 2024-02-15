@@ -29,6 +29,64 @@ macro memcp srcptr, destptr, words {    ; Memory copy: SI, DI, number of words
            rep   movsw
 }
 
+macro dmsg id, [message] {
+  common
+    label  debug_msg_#id
+  forward
+    db message
+  common
+    .end = $ - debug_msg_#id
+}
+
+macro debug_prompt id, cursor_pos {
+  local ..x, ..y
+  if DEBUGMODE
+    cmp    byte[cs:state.started], 1
+    je     ..y
+    push   ds
+    push   es
+    push   bp
+    push   ax
+    push   bx
+    push   cx
+    push   dx
+    push   cs
+    pop    es
+    push   cs
+    pop    ds
+  if cursor_pos eq
+    mov    ah, 3                         ; get cursor position to DX
+    xor    bh, bh
+    int    10h
+  else
+    mov    dx, cursor_pos                ; use specified position
+  end if
+    mov    ax, 1301h                     ; write string at cursor
+    mov    bl, 7                         ; BH = page, BL = attr
+    mov    bp, debug_msg_#id             ; ES:BP = string to write
+    mov    cx, debug_msg_#id#.end        ; CX = #chars in string
+    int    10h                           ; (DX = cursor position)
+    xor    ax, ax
+    int    16h                           ; get keypress
+    cmp    al, 1Bh                       ; ESC?
+    jne    ..x
+    jmp    debug_exit
+  ..x:
+    mov    dx, debug_msg_cr
+    mov    ah, 9
+    int    21h
+    pop    dx
+    pop    cx
+    pop    bx
+    pop    ax
+    pop    bp
+    pop    es
+    pop    ds
+  ..y:
+  end if
+}
+
+
 ;-----------------------------------------------------------------------------
 ;###############################  CONSTANTS  #################################
 ;-----------------------------------------------------------------------------
@@ -103,6 +161,9 @@ macro memcp srcptr, destptr, words {    ; Memory copy: SI, DI, number of words
 
   UNDO              equ font.fspec                ; Size of undo buffer
 
+  DEBUGMODE         equ 0                         ; Step-by-step VGA setup
+                                                  ;    (w/o video disable)
+
 ;-----------------------------------------------------------------------------
 ;###############################  STRUCTURES  ################################
 ;-----------------------------------------------------------------------------
@@ -149,6 +210,7 @@ org 100h
 ;-----------------------------------------------------------------------------
 ;###########################  SUBROUTINES + DATA  ############################
 ;-----------------------------------------------------------------------------
+  include 'debug.inc'
   include 'dos.inc'
   include 'str.inc'
   include 'vga.inc'

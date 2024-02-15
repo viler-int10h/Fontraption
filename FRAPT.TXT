@@ -347,6 +347,11 @@ needed.  But, for the sake of completeness...
                                VERSION HISTORY
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+ v1.12 (2024-02-15):
+   * Bugfix: supports the PS/2 Model P70 plasma display
+   * Bugfix: should now work on VirtualBox 6.x
+   * Add debug option to single-step VGA initialization (set DEBUGMODE to 1)
+
  v1.11 (2020-09-27):
    * Bugfix: undo works correctly after swapping characters
 

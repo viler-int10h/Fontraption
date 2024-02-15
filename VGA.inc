@@ -34,6 +34,7 @@
 
     mov    ax, 3
     int    10h
+    debug_prompt start
 
   ; Dump VGA ROM fonts to top segment (conveniently keeps 8x16 font active)
 
@@ -56,8 +57,12 @@
     xor    bl, bl              ; block specifier 000b (target = A000:0000)
     mov    ax, 1101h           ; LOAD ROM MONOCHROME PATTERNS (PS,EGA,VGA)
     int    10h
+
     call   bp                  ; ...8x14 font to top.8x14
     call   bp                  ;    ...again, to top.9x14 (for later tweaking)
+
+    debug_prompt read_8x8
+
     mov    ax, 1102h           ; LOAD ROM 8x8 DBL-DOT PATTERNS (PS,EGA,VGA)
     int    10h
     push   di  ;3;
@@ -66,14 +71,19 @@
     pop    di  ;3;             ; ...(gotta clean this one up afterwards)
     mov    bx, 8
     call   font_cleanup.v
+
+    debug_prompt read_8x16
+
     xor    bl, bl              ; reset block specifier; fixes ET4K (+others?)
     mov    ax, 1104h           ; LOAD ROM 8x16 CHARACTER SET (VGA)
     int    10h
     call   bp                  ; ...8x16 font to top.8x16
     call   bp                  ;    ...again, to top.9x16 (for later tweaking)
 
+    debug_prompt copy_8x8
+
   ; Copy ROM 8x8 font to font RAM (for 50-line UI) so we can customize glyphs
-    
+
     pop    si  ;2;  ;******    ; start with top.8x8
     mov    di, VRAM_UI8_FONT
     push   ds
@@ -82,17 +92,21 @@
     pop    es                  ; target: seg_vga
     call   vga_dump_font.r     ; reverse-"dump" it
 
+    debug_prompt read_9dot
+
   ; Fix 9-dot versions of our dumped fonts w/alternate wide chars
 
     mov    bh, 5               ; 05h = ROM 9x14 *alternates*
     call   vga_dump_widechars
     mov    bh, 7               ; 07h = ROM 9x16 *alternates*
     call   vga_dump_widechars
-    
+
     pop    ds  ;1;
     pop    es  ;0;
 
   ; Disable blinking and cursor
+
+    debug_prompt noblink
 
     cli
     mov    dx, 3DAh            ; read port 3DA (status) to put port 3C0 in
@@ -102,17 +116,20 @@
     out    dx, al
     mov    al, 00000100b       ; b7:   b6:   b5:   b4:  b3:   b2:  b1:   b0:
     out    dx, al              ; P54S  8BIT  PPM   ---  BLINK LGE  MONO  GFX
+
+    debug_prompt nocursor
+
     call   vga_set_cursor.off
     sti
 
   ; Are we in DOSBox with a non-"vgaonly" machine?
-  
+
     push   es  ;1;
     mov    es, [seg_bios]      ; scan BIOS area for "DOSBox" signature
     mov    di, SIG_AREA_OFFS   ; DI -> area to search in
     mov    dx, SIG_AREA_LEN    ; DX =  how many bytes to search
     xor    ax, ax              ; AL =  detection flag (init zero)
-  .scan:      
+  .scan:
     mov    si, txt.dosbox      ; what are we looking for again?
     mov    cx, SIG_LEN         ; and how long is it?
     repe   cmpsb               ; check for a match
@@ -121,7 +138,7 @@
     jmp    short .machine
 @@: dec    dx                  ; one less byte to look through
     jnz    .scan               ; are we there yet?
-  .machine:  
+  .machine:
     pop    es  ;0;
     xchg   ax, cx              ; move flag to CL
     or     cl, cl
@@ -137,6 +154,8 @@
 
   ; Get clock mode, for value of 9/8-dot flag
 
+    debug_prompt read_clock
+
   .clock:
     mov    dx, 3C4h                      ; Sequencer (address) port
     mov    al, 1                         ; Clocking mode register (index)
@@ -145,13 +164,18 @@
     in     al, dx
     or     cl, cl                        ; check DOSBox-VGA detection result
     jz     @f                            ; - 0? all clear
-    or     al, cl                        ; - 1? force 8-dot/char clock mode 
+    or     al, cl                        ; - 1? force 8-dot/char clock mode
     inc    byte[state.is_bad_vga]        ;      + indicate problem
 @@: mov    [state.clock_mode_80], al
 
   ; Modify UI fonts and upload our two user fonts
 
+    debug_prompt mod_uifont
+
     call   vga_mod_UI_glyphs               ; Inject 2 UI fonts w/custom glyphs
+
+    debug_prompt userfonts
+
     mov    word[state.currfont_ptr],font2  ; Start w/font 2
     stc                                    ; On-screen vertical centering ON
     call   vga_upload_font
@@ -160,6 +184,8 @@
     call   vga_upload_font
 
   ; Line up VGA palette entries so they're straight 0..15, not EGA-like
+
+    debug_prompt re_pal
 
     mov    dh, 3
     mov    cx, 16
@@ -263,7 +289,7 @@
     or     al, cl
     mov    dl, 0C2h                      ; Miscellaneous Output Register
     out    dx, al                        ;    (write address)
-    mov    dl, 0C4h                      ; Sequencer (address) port again     
+    mov    dl, 0C4h                      ; Sequencer (address) port again
 @@: mov    ax, 0300h                     ; 00 - Synchronous reset: CLEAR
     out    dx, ax
     ret
@@ -372,7 +398,7 @@
     db     0FFh, 00h,0AAh, 00h,0AAh, 00h,0AAh, 00h        ; 203d (GUIDE2)
     db     0AAh, 00h,0AAh, 00h,0AAh, 00h,0AAh, 00h
     db     0,0,0,0,0,0, 0AAh, 0,0,0,0,0,0,0,0,0           ; 204d (TAB_BORDER)
-    
+
     db     07Fh,060h,060h,060h,06Fh,060h,060h,060h,07Fh   ; drive icon
     db     0FFh,000h,000h,07Eh,0FFh,07Eh,000h,000h,0FFh
     db     0FEh,006h,036h,006h,0F6h,006h,006h,006h,0FEh
@@ -402,35 +428,33 @@
 ;                      This and the next 2 routines modified + FIXED from:
 ;                      https://wiki.osdev.org/VGA_Fonts
 ;-----------------------------------------------------------------------------
-    mov    dx, 03ceh
-    mov    ax, 5                         ; Write mode 0, disable even/odd GFX
-    out    dx, ax
-    mov    ax, 0204h                     ; Read map: set plane 2 for reads
-    out    dx, ax
-    mov    ax, 0406h                     ; Map VGA mem to seg A000h
-    out    dx, ax
-    mov    dl, 0c4h
-    mov    ax, 0402h                     ; Map mask: set plane 2 for writes
-    out    dx, ax
-    mov    ax, 0604h                     ; Disable even/odd mode in SEQ
-    out    dx, ax
+    mov    dx, 03ceh                     ; Graphics register:
+    mov    ax, 5                         ;   * Mode: R/W mode 0; disable even/
+    out    dx, ax                        ;     odd VRAM access (char/attr)
+    mov    ax, 0204h                     ;   * Read map select: set plane 2
+    out    dx, ax                        ;     (font RAM) for reading
+    mov    ax, 0406h                     ;   * Misc: map VRAM to A000h | don't
+    out    dx, ax                        ;     chain odd/even | +text mode
+    mov    dl, 0c4h                      ; Sequencer:
+    mov    al, 2 ;0402h                  ;   * Map mask: enable writing to
+    out    dx, ax                        ;     plane 2 only
+    mov    ax, 0604h                     ;   * Memory mode: Disable even/odd
+    out    dx, ax                        ;     char/attr access | enable 256K
     ret
 
 ;-----------------------------------------------------------------------------
   vga_end_font_IO:  ; Restore VGA state to normal operation (planes 0, 1)
 ;-----------------------------------------------------------------------------
-    mov    dx, 03c4h
-    mov    ax, 0302h                     ; Map mask: set planes 0,1 for writes
-    out    dx, ax
-    mov    ax, 0204h                     ; Enable even/odd mode in SEQ
-    out    dx, ax
-    mov    dl, 0ceh
-    mov    ax, 1005h                     ; Write mode 1? disable even/odd GFX?
-    out    dx, ax
-    mov    ax, 0304h                     ; Read mask: set planes 0,1 for reads
-    out    dx, ax
-    mov    ax, 0E06h                     ; Map VGA mem to seg B800h,
-    out    dx, ax                        ;     chain odd/even, text mode
+    mov    dx, 03c4h                     ; Sequencer:
+    mov    ax, 0302h                     ;   * Map mask: enable writing to
+    out    dx, ax                        ;     planes 0,1
+    mov    ax, 0204h                     ;   * Memory mode: enable even/odd
+    out    dx, ax                        ;     char/attr access | enable 256K
+    mov    dl, 0ceh                      ; Graphics register:
+    mov    ax, 1005h                     ;   * Mode: R/W mode 0; enable even/
+    out    dx, ax                        ;     odd VRAM access (char/attr)
+    mov    ax, 0E06h                     ;   * Misc: map VRAM to B800h | chain
+    out    dx, ax                        ;     odd/even | +text mode
     ret
 
 ;-----------------------------------------------------------------------------
@@ -515,15 +539,20 @@
 ; so we compose our 16-color palettes out of identical 8-color halves.
 ; BIOS call since it's easier and we don't particularly care about speed here.
 ;-----------------------------------------------------------------------------
+    debug_prompt dac1
     mov    ax, 1012h                     ; SET BLOCK OF DAC REGISTERS
     push   ax  ;1;
     xor    bx, bx                        ; BX = starting color register
     mov    cx, 8                         ; CX = number of registers to set
     int    10h
+
+    debug_prompt dac2
                                          ; fix some VGA BIOSes which like
     pop    ax  ;0;                       ;     to corrupt AX (Tseng 4000?)
     mov    bx, cx                        ; 8 more
     int    10h
+
+    debug_prompt fin_init
     ret
 
 ;-----------------------------------------------------------------------------
@@ -718,7 +747,7 @@
   ; Now... do we need to switch to 40 or 80 columns?
 
     mov    si, go_40col        ; grab those values
-    test   _COLS, 0FFh         ; 
+    test   _COLS, 0FFh         ;
     js     @f                  ; SF set? - +++++ GO 40-COLUMN +++++
     mov    si, go_80col        ;  clear? - +++++ GO 80-COLUMN +++++
 @@: call   vga_crtc_horiz_out  ; send 'em all out
@@ -732,10 +761,10 @@
 ;-----------------------------------------------------------------------------
     mov    si, scratch
     mov    dx, 3D4h                      ; CRTC address
-    push   dx  ;1;            
+    push   dx  ;1;
     lodsw                                ; r07h : OVERFLOW (original value)
-    push   si  ;2:            
-    out    dx, ax             
+    push   si  ;2:
+    out    dx, ax
     mov    ax, 8F12h                     ; r12h : VERTICAL DISPLAY END
     out    dx, ax
 
@@ -755,11 +784,11 @@
 
     pop    si  ;1;                       ; SW1
     pop    dx  ;0;                       ; CRTC address
-    cli                                  
+    cli
     lodsw                                ; r11h : VERTICAL RETRACE END
     or     ah, 10000000b                 ; set bit 7 (CRTC protect bit)
-    out    dx, ax                        ; no need to worry about the other 
-    sti                                  ;     registers - the next routines 
+    out    dx, ax                        ; no need to worry about the other
+    sti                                  ;     registers - the next routines
     ret                                  ;     called will deal with them
 
 ;-----------------------------------------------------------------------------
@@ -794,6 +823,8 @@
 ;
 ; In:  byte[state.screen] = screen (SCR_ED25 / SCR_ED50 / SCR_FILES)
 ;-----------------------------------------------------------------------------
+    debug_prompt crtcvert, 0400h
+
     mov    bx, [state.screen]            ; Use BX as lookup index (BH=0)
     shl    bl, 1
     mov    bx, [crtc_vals+bx]            ; now BX points to byte-value list
@@ -810,6 +841,8 @@
     loop   @b
     sti
 
+    debug_prompt charmap
+
   ; Update Char Map Select reg based on screen/font state
 
     mov    dl, 0C4h                      ; Sequencer (address) port
@@ -824,9 +857,9 @@
     ret
 
   crtc_vals:       dw .ed25, .ed50, .files
-    .ed25:         db 000h, 050h, 07Fh, 010h, 00Fh
-    .ed50:         db 00Fh, 050h, 087h, 010h, 007h
-    .files:        db 007h, 0D0h, 07Fh, 010h, 00Fh
+    .ed25:         db 000h, 050h, 07Fh, 01Fh, 00Fh
+    .ed50:         db 00Fh, 050h, 087h, 01Fh, 007h
+    .files:        db 007h, 0D0h, 07Fh, 01Fh, 00Fh
                     ;  |     |     |     |     |
   crtc_indexes:    db 00Ch, 00Dh, 018h, 007h, 009h
   ;        ___________/  ___/      |      \____   \______________

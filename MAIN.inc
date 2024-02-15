@@ -252,7 +252,7 @@
 @@: mov    [state.drag_flag], al         ; store shift flag for dragging
 
   ; Generate table of palette pointers
-  
+
     mov    si, pal_entries
     mov    di, pal_list
     mov    cx, NUM_PALETTES
@@ -274,11 +274,13 @@
 
   ; Temporarily disable the video and draw initial screen contents
 
+  IF ~DEBUGMODE
     mov    ah, [state.clock_mode_80]
     or     ah, 20h                       ; bit 5 = screen disable
     mov    al, 1                         ; Clocking Mode Register (Index 01h)
     mov    dx, 3C4h
     out    dx, ax
+  END IF
     call   screen_gen_editor             ; get crackin' on the screens
 
   ; Show something informative
@@ -299,15 +301,17 @@
     pop    si
 @@: call   screen_status_msg
     call   ed_switch_to_font             ; start the show
-    inc    byte[state.started]           ; indicate that editor is started
 
   ; Re-enable video and proceed
+
+    debug_prompt vid_en
 
     mov    ah, [state.clock_mode_80]
     mov    al, 1                         ; Clocking Mode Register (Index 01h)
     mov    dx, 3C4h
     out    dx, ax
 
+    inc    byte[state.started]           ; indicate that editor is started
     include 'editor.inc'                 ; falls through to ed_get_key
 
 ;+++++++++++++++++++++++++++++++  TERMINATION  +++++++++++++++++++++++++++++++
