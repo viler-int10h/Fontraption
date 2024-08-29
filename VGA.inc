@@ -429,8 +429,8 @@
 ;                      https://wiki.osdev.org/VGA_Fonts
 ;-----------------------------------------------------------------------------
     mov    dx, 03ceh                     ; Graphics register:
-    mov    ax, 5                         ;   * Mode: R/W mode 0; disable even/
-    out    dx, ax                        ;     odd VRAM access (char/attr)
+    mov    ax, 0005h                     ;   * Mode: R/W mode 0; disable odd/
+    out    dx, ax                        ;     even VRAM access (char/attr)
     mov    ax, 0204h                     ;   * Read map select: set plane 2
     out    dx, ax                        ;     (font RAM) for reading
     mov    ax, 0406h                     ;   * Misc: map VRAM to A000h | don't
@@ -438,7 +438,7 @@
     mov    dl, 0c4h                      ; Sequencer:
     mov    al, 2 ;0402h                  ;   * Map mask: enable writing to
     out    dx, ax                        ;     plane 2 only
-    mov    ax, 0604h                     ;   * Memory mode: Disable even/odd
+    mov    ax, 0604h                     ;   * Memory mode: Disable odd/even
     out    dx, ax                        ;     char/attr access | enable 256K
     ret
 
@@ -448,11 +448,13 @@
     mov    dx, 03c4h                     ; Sequencer:
     mov    ax, 0302h                     ;   * Map mask: enable writing to
     out    dx, ax                        ;     planes 0,1
-    mov    ax, 0204h                     ;   * Memory mode: enable even/odd
+    mov    ax, 0204h                     ;   * Memory mode: enable odd/even
     out    dx, ax                        ;     char/attr access | enable 256K
     mov    dl, 0ceh                      ; Graphics register:
     mov    ax, 1005h                     ;   * Mode: R/W mode 0; enable even/
     out    dx, ax                        ;     odd VRAM access (char/attr)
+    mov    ax, 0004h                     ;   * Read map: set plane 0 (with O/E
+    out    dx, ax                        ;     char/attr addressing: 0/1)
     mov    ax, 0E06h                     ;   * Misc: map VRAM to B800h | chain
     out    dx, ax                        ;     odd/even | +text mode
     ret
