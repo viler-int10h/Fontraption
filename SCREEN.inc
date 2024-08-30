@@ -769,21 +769,30 @@
     call   bp                            ; SI -> drag
     call   bp                            ; SI -> guide
 
-  ; DESELECT, CUT, COPY: enabled if marking exists for relevant box
+  ; DESELECT: enabled if selection exists for current box
+  ; CUT, COPY: font box = always enabled; editbox = as above
 
-    mov    di, state.chrmark_mask        ; word to check for editbox
     pushf  ;1;
+    pushf  ;2;
+    mov    di, state.chrmark_mask        ; word to check for editbox
     jz     @f                            ; ZF set? = editbox (from prev check)
     mov    di, state.fntmark             ; word to check for fontbox
 @@: xor    ax, ax
     cmp    word[di], ax                  ; got a relevant marking?
     je     @f                            ; - no? skip
+    dec    ax
+@@: inc    ax                            ; - yes? ZF should be set now
+    push   ax ;3;
+    call   bp                            ; UNMARK
+    pop    ax ;2;                        ; 0 or 1
+    popf   ;1;                           ; for cut/copy:
+    jz     @f                            ; - editbox? - reuse condition
+    xor    ax, ax                        ; - fontobx? - always allow
+@@: dec    ax
+    mov    [state.can_copy], ax          ; bit 0 = 1 if enabled
     inc    ax
-@@: mov    [state.can_copy], ax          ; - yes? we can do it!
-    dec    ax                            ;        and ZF should be set now
-    call   bp                            ; unmark
-    call   bp                            ; cut
-    call   bp                            ; copy
+    call   bp                            ; CUT
+    call   bp                            ; COPY
 
   ; PASTE: enabled if clip type and dimensions match relevant box
 

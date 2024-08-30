@@ -1575,7 +1575,10 @@
     pushf  ;3;
     mov    ax, [state.fntmark_start]     ; AL: from, AH: to
     push   ax  ;4;
-    call   font_point_to_char.in_al      ; DI -> row 0 of first char
+    or     ax, ax                        ; check for selection
+    jnz    @f                            ; don't have?
+    mov    al, [state.hoverchar]         ; - use single character at cursor
+@@: call   font_point_to_char.in_al      ; DI -> row 0 of first char
     mov    si, di                        ; SI ->  "
     pop    ax  ;3;
     sub    ah, al
