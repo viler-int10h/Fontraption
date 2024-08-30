@@ -1309,16 +1309,17 @@
     mov    bl, [state.fntmark_start]     ; track mark (selection) start
     mov    bh, ah  ;content attr.        ; now we can reuse BH (backup)
     mov    SL, cl  ;currchar attr.       ; use scratch "register"
-    mov    cx, 255                       ;    .--   CH=0, CL=255
-    xor    ch, bl                        ;    |     CH=0 if start=0 (A)
-    xor    cl, [state.fntmark_end]       ;  UGLY    CL=0 if end=255 (B)
-    or     ch, cl                        ;  HACK    CH=0 if (A)and(B)
-    jnz    @f                            ;    |     so if CH=0... set
-    mov    dh, dl                        ;    `--   unsaved=marked attr
-@@: mov    SH, dh  ;unsaved/marked attr. ; use scratch "register"
+;   mov    cx, 255                       ;    .--   CH=0, CL=255
+;   xor    ch, bl                        ;    |     CH=0 if start=0 (A)
+;   xor    cl, [state.fntmark_end]       ;  UGLY    CL=0 if end=255 (B)
+;   or     ch, cl                        ;  HACK    CH=0 if (A)and(B)
+;   jnz    @f                            ;    |     so if CH=0... set
+;   mov    dh, dl                        ;    `--   unsaved=marked attr
+;@@:
+    mov    SH, dh  ;unsaved/marked attr. ; use scratch "register"
     mov    si, [state.currfont_ptr]      ; which font are we in?
-    add    si, font.changes              ;    let's track unsaved chars
-    xor    bp, bp                        ;    BP to the rescue!
+    add    si, font.changes              ; track modified chars w/ [si+bp]
+    xor    bp, bp
     xor    al, al                        ; char counter
     mov    cx, 16
 
@@ -1326,12 +1327,16 @@
     mov    cl, 16
 .c: test   byte[state.fntmark], 1        ; is there even an active mark?
     jz     .u                            ;   - no; just check if unsaved
+
     cmp    al, bl                        ; start marking?
+
     jb     @f                            ;   - nope, go on
     xchg   bh, dl                        ;   - yep, swap Content/Marked attrs;
     mov    bl, [state.fntmark_end]       ;     next tests will be for mark END
-    mov    dh, bh                        ;     till then, disregard unsaved
-    inc    bl                            ;     we mustn't miss no chars!
+    mov    dh, bh                        ;     till then, disregard unsaved +
+    inc    bl                            ;     include end char within mark;
+    jnz    @f                            ;     0 (end=255)? force unsaved to
+    mov    SH, dl                        ;     show as marked from now on
 @@: cmp    al, bl                        ; end marking?
     jb     .u                            ;   - nope, go on (check if unsaved)
     mov    dl, bh                        ;   - yep, use Content attr till end
