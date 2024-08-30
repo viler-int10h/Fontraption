@@ -922,7 +922,7 @@
     push   es  ;1;
     mov    es, [seg_fseg]                ;++++++++ INIT FILELIST I/O +++++++++
 
-    ; Get us a nice list, eh? (get_list calls preserve BP for future queries)
+    ; Get file list (dots changed to ascii 01; get_list calls preserve BP)
 
     call   dos_get_list.dirs             ; (gets drives too)
     mov    ax, [fdlg.actkey]
@@ -951,7 +951,7 @@
     call   str_gen_fquery                ;     add it
     call   dos_get_list.files            ;     get list, and:
 
-    ; Sort those bastards!
+    ; Sort 'em and restore the dots
 
   .sort:
     push   ds  ;2;
@@ -959,6 +959,7 @@
     xor    ax, ax                        ; mergesort arg2: first item
     mov    cx, [fdlg.count]              ; mergesort arg3: last item = number
     push   cx  ;3;                       ;     of entries (save for post-sort)
+    push   cx  ;4;
     dec    cx                            ;     minus 1 (point to last one)
     shl    cx, 1                         ;     *2 (size of pointer)
 
@@ -968,6 +969,13 @@
     push   ax  ;arg2                     ;   | PUSH ARGUMENTS AND EXECUTE |
     push   cx  ;arg3                     ;   |    RECURSIVE MERGE SORT    |
     call   file_sort_dir                 ;   |    --------------------    |
+    mov    si, fseg.fnames               ;   | now restore filename dots: |
+    pop    cx  ;3;                       ;   |           CX = file count  |
+    xor    bx, bx                        ;   |                            |
+@@: mov    bl, [si+15]                   ;   | get dot offset within name |
+    mov    byte[si+bx], '.'              ;   | fix it up                  |
+    add    si, 16                        ;   | next file                  |
+    loop   @b                            ;   |                            |
     mov    bx, -2  ;pointer              ;   | now scan: BX = pointer     |
     pop    cx  ;2; ;max range            ;   |           CX = file count  |
 @@: inc    bx                            ;   | next file                  |

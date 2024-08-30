@@ -43,7 +43,7 @@
     mov    dx, dos_new_int24             ;     saving the old one, since DOS
     int    21h                           ;     restores it on termination)
 
-  ; Spot the locations for the two extra segments we'll need
+  ; Spot the locations for the two extra segments we'll need (TODO: optimize)
 
     mov    ax, cs
     add    ah, 10h

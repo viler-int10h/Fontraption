@@ -232,13 +232,14 @@
 
 ;-----------------------------------------------------------------------------
   dos_get_list:  ; add to filelist according to query (preserves BP)
+;                ; dots -> ascii 01 (dot offset within filename @ [fname+15])
 ;
 ; In:       fdlg.count = current file count
 ;           fdlg.query = full query string (path & *.extension)
 ;           ES        -> files segment(!)
 ; Out:      CF         = set on error, clear on success
 ;           fdlg.count = updated file count (reset to 0 if .dirs)
-; Destroys: all except BP
+; Destroys: all except BP (preserved for future queries)
 ;-----------------------------------------------------------------------------
   .dirs:
     mov    si, scratch                   ; DRIVE-LETTER LIST FIRST!
@@ -335,19 +336,39 @@
     mov    byte[si], al                  ; write sorting attribute
 
     .do_it:
-    push   bp  ;2;                       ; ready to write?
+    push   bx  ;2;
+    push   bp  ;3;                       ; ready to write?
     mov    cl, 4
     shl    bp, cl
     lea    di, [fseg.fnames+bp]          ; offset in fnames = count*16
-    push   di  ;3;                       ; ...keep it aside
-    call   str_copy_asc0                 ; copy sort attribute + filename
-    pop    ax  ;2;                       ; now get that offset back
+    push   di  ;4;                       ; ...keep it aside
+    mov    ah, 15                        ; dummy default for dot offset
+    xor    bx, bx                        ;    position counter
+
+.c: lodsb                                ; copy sort attribute + filename
+    cmp    al, '.'
+    jne    @f  ;OPT                      ; dot found?
+    mov    al,  1                        ; - replace w/1 (temp, for sorting)
+    mov    ah, bl                        ; + keep the offset
+@@: inc    bx
+    or     al, al
+    stosb
+    jnz    .c
+
+    pop    di  ;3;                       ; restore offset in fnames
+    mov    byte[es:di+15], ah            ; store in unused byte of fname entry
+    mov    ax, '..'                      ; fixup parent dir
+    cmp    byte[es:di], 3
+    jne    @f
+    mov    word[es:di+1], ax
+@@: xchg   ax, di                        ; AX = ptr to filename
     dec    cx
     shr    bp, cl
     mov    di, bp                        ; index in fname_ptrs (0!) = count*2
     stosw                                ; write it
 
-    pop    bp  ;1;
+    pop    bp  ;2;
     inc    bp                            ; count ++
+    pop    bx  ;1;
     ret
 

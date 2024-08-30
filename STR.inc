@@ -79,8 +79,8 @@
     xor    bh, bh
 .l: mov    ah, 0Eh                       ; IBM XT bios seems to stomp AH
     lodsb
-    cmp    al, 0
-    jne    @f
+    or     al, al
+    jnz    @f
     ret
 @@: int    10h
     jmp    short .l
@@ -89,9 +89,9 @@
   str_copy_asc0:  ; In: DS:SI -> source, ES:DI -> target
 ;-----------------------------------------------------------------------------
 @@: lodsb
-    cmp    al, 0
+    or     al, al
     stosb
-    jne    @b
+    jnz    @b
     ret
 
 ;-----------------------------------------------------------------------------
@@ -99,9 +99,9 @@
 ;-----------------------------------------------------------------------------
 @@: lodsb
     call   str_upper_al
-    cmp    al, 0
+    or     al, al
     stosb
-    loopne @b
+    loopnz @b
     ret
 
 ;-----------------------------------------------------------------------------
@@ -120,29 +120,29 @@
 ; In:      AL = value,   AH = attribute
 ;          ES:DI -> pointer to screen position
 ;-----------------------------------------------------------------------------
-  	push   ax
-  	push   cx
-  	mov    cl, 4
-  	shr    al, cl
-  	cmp    al, 0                         ; is AL a leading zero?
-  	jnz    .nz                           ;   - nope, nonzero digit: print it
-  	stosw                                ;   - yep, print a null char instead
-  	jmp    short .z                      ;       ...and go on
+    push   ax
+    push   cx
+    mov    cl, 4
+    shr    al, cl
+    or     al, al                        ; is AL a leading zero?
+    jnz    .nz                           ;   - nope, nonzero digit: print it
+    stosw                                ;   - yep, print a null char instead
+    jmp    short .z                      ;       ...and go on
   .nz:
-  	call   str_hex_nybble
+    call   str_hex_nybble
   .z:
     pop    cx
-  	pop    ax                            ; fall through to second nybble
+    pop    ax                            ; fall through to second nybble
 
   str_hex_nybble:                        ; call directly to print ONE nybble
-	  and    al, 0Fh                       ; get rid of those 4 high bits
-	  add    al, 90h		                    ; pretend we've added two BCD values
-	  daa                                  ; low nybble>9? subtract 10d, set CF
-	                                       ;     and clear the high nybble
-	  adc    al, 40h                       ; add w/CF, for next DAA's benefit
-	  daa                                  ; this one ensures we have either
-	  stosw                                ;      digits or (uppercase) A-F
-	  ret
+    and    al, 0Fh                       ; get rid of those 4 high bits
+    add    al, 90h		                    ; pretend we've added two BCD values
+    daa                                  ; low nybble>9? subtract 10d, set CF
+                                         ;     and clear the high nybble
+    adc    al, 40h                       ; add w/CF, for next DAA's benefit
+    daa                                  ; this one ensures we have either
+    stosw                                ;      digits or (uppercase) A-F
+    ret
 
 ;-----------------------------------------------------------------------------
   str_dec_byte: ; Prints unsigned 8-bit value in AL as 3-digit decimal number
