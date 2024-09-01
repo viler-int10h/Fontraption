@@ -127,24 +127,25 @@
     push   es  ;1;
     mov    es, [seg_bios]      ; scan BIOS area for "DOSBox" signature
     mov    di, SIG_AREA_OFFS   ; DI -> area to search in
-    mov    dx, SIG_AREA_LEN    ; DX =  how many bytes to search
     xor    ax, ax              ; AL =  detection flag (init zero)
   .scan:
     mov    si, txt.dosbox      ; what are we looking for again?
     mov    cx, SIG_LEN         ; and how long is it?
     repe   cmpsb               ; check for a match
-    jne    @f                  ; not found? - try again
-    inc    ax                  ; AL = 1? got DOSBox
-    jmp    short .machine
-@@: dec    dx                  ; one less byte to look through
-    jnz    .scan               ; are we there yet?
-  .machine:
+    je     @f
+    cmp    di, SIG_ENDSCAN     ; - not found; end of area to scan?
+    jna    .scan               ;              nope, repeat
+    jmp    short .scandone     ;              yeah, done
+@@: cmp    word[es:di], '-X'   ; - found: if it's DOSBox-X, don't raise flag
+    je     .scandone           ;   (-X allows 9-dot mode w/all VGA machines)
+    inc    ax                  ;   otherwise, AL=1: got DOSBox
+  .scandone:
     pop    es  ;0;
     xchg   ax, cx              ; move flag to CL
     or     cl, cl
     jz     .clock              ; not in DOSBox: skip machine check
-    mov    ax, 1203h           ; yes? set an invalid vertical resolution
-    mov    bl, 30h
+    mov    ax, 1203h           ; machine check: try to set an invalid vertical
+    mov    bl, 30h             ;   resolution w/VGA BIOS call
     int    10h
     cmp    al, ah              ; supported (AL=12h)?
     jne    @f                  ; - no: bad VGA machine; keep problem flag set

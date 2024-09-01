@@ -153,6 +153,7 @@ macro debug_prompt id, cursor_pos {
   SIG_LEN           equ 6                         ; For BIOS tests
   SIG_AREA_OFFS     equ 0E000h
   SIG_AREA_LEN      equ 128-SIG_LEN
+  SIG_ENDSCAN       equ SIG_AREA_OFFS+SIG_AREA_LEN
   EQUIPMENT_LIST    equ 0410h
   ONE_FLOPPY_FLAG   equ 0504h
   KBD_TESTKEY       equ 9100h
