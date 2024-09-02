@@ -106,6 +106,7 @@
     dw     2B7Ch                         ; |
     dw     0C5Fh                         ; _
     dw     8000h                         ; (Ctrl+)Alt+9
+    dw     5B00h                         ; Shift+F8
     file_keys:
     dw     3C00h                         ; F2
     dw     1F13h                         ; Ctrl+S
@@ -159,6 +160,7 @@
     dw     ed_guide.v                    ; |
     dw     ed_guide.h                    ; _
     dw     ed_cheat_code                 ; (Ctrl+)Alt+9
+    dw     ed_lge                        ; Shift+F8
     ;file_keys:
     dw     file_dialog.with_fname        ; F2
     dw     file_dialog.with_fname        ; Ctrl+S
@@ -1338,10 +1340,25 @@
     call   screen_status_msg             ; no go, we're screwed - admit it
     ret
 @@: call   vga_set_clock_mode            ; dot-mode switch - throw it
-    call   update_checkmark              ; and let the user know it
+    call   update_8_9_dot_hilite         ; and let the user know it
     call   vga_mod_UI_glyphs             ; upload new glyphs, don't blow it
     call   update_lbox_grid              ; redraw the grid to show it
     jmp    ed_do_lbox
+
+;-----------------------------------------------------------------------------
+  ed_lge: ; Flip LGE bit (extend C0h-DFh in 9-dot mode), update highlight
+;           (actual VGA register isn't written until preview mode)
+;-----------------------------------------------------------------------------
+    mov    si, state.clock_mode_80
+    lodsw                                ; AL = clock mode, AH = attr modectl
+    test   al, 1                         ; disallow if in 8-dot mode
+    jz     @f
+    ret
+@@: xor    ah, 4                         ; flip bit 2
+    mov    byte[si-1], ah                ; store value
+    call   update_lge_hilite
+    call   update_lbox_char              ; in case 9th col changes for C0-DF
+    ret
 
 ;-----------------------------------------------------------------------------
   ed_cheat_code:  ; Let DOSBox users bypass the better-judgment check, and

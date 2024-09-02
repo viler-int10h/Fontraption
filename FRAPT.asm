@@ -121,7 +121,9 @@ macro debug_prompt id, cursor_pos {
   GUIDE1            equ 202
   GUIDE2            equ 203
   TAB_BORDER        equ 204
-  DRIVE_ICON        equ 205
+  SHIFT_SYM         equ 205
+  DRIVE_ICON        equ 206
+  NUM_MOD_CHARS     equ 6
   MODIFY_UI16       equ VRAM_UI16_FONT+(GRID1*32)
   MODIFY_UI8        equ VRAM_UI8_FONT+(GRID1*32)
   ARROWS            equ 27,24,25,26
@@ -341,9 +343,13 @@ org 100h
 ; Location+attr+ASC0 strs (use locate_n_draw_x2, AX = draw_attr_asc0)- - - - -
 
   loc_attstr_esc:
-    db 44, 8
+    db 53, 7
     dw att.key_special
-    db '[ESC] to exit',0
+    db '[Esc]',0
+  loc_attstr_esc2:
+    db 53, 8
+    dw att.key_special
+    db '[Esc]',0
   loc_attstr_editbox_cap:
     db 53, 10
     dw att.caption
@@ -356,7 +362,7 @@ org 100h
 ; Ellipsis locations (use w/locate_n_draw_x2, AX = draw_ellipsis)- - - - - - -
 
   loc_ellipsis:
-    db 51,1,  51,2,  54,4,  53,5,  53,6,  74,1,  71,7,  71,8,  73,13,  69,21
+    db 51,0,  51,1,  54,3,  53,4,  53,5,  74,0,  71,7,  71,8,  73,13,  69,21
     ellipsis_count = 10
 
 ; FORMATTED STRINGS - Markup:- - - - - - - - - - - - - - - - - - - - - - - - -
@@ -387,14 +393,14 @@ org 100h
  ; Formatted w/location (use w/locate_n_draw_x2, AX = draw_formatted_asc0):
 
   loc_formatted:
-       db 44, 1, BK2,'^S',SPC,'ave',(SNK or 5),'F2',0
-       db 44, 2, BK2,'^L',SPC,'oad',(SNK or 5),'F3',0
-       db 44, 4, BK2,'^G',SPC,'et VGA',0
-       db 44, 5, BK2,'^I',SPC,'mport',0
-       db 44, 6, BK2,'^E',SPC,'xport',0
-       db 64, 1, 'Set height',(SNK or 3),'F4',0
+       db 44, 0, BK2,'^S',SPC,'ave',(SNK or 5),'F2',0
+       db 44, 1, BK2,'^L',SPC,'oad',(SNK or 5),'F3',0
+       db 44, 3, BK2,'^G',SPC,'et VGA',0
+       db 44, 4, BK2,'^I',SPC,'mport',0
+       db 44, 5, BK2,'^E',SPC,'xport',0
+       db 64, 0, 'Set height',(SNK or 3),'F4',0
        db 64, 8, 'Preview',(SNK or 5),'F10',0
-  .fP: db 64, 7, 'Palette',(SNK or 6),'F9',0
+       db 64, 7, 'Palette',(SNK or 6),'F9',0
        db 44,12, 'Move',SNK1,ARROWS,0
        db 44,15, 'Mark',SNK1,'LShift+',ARROWS,0
        db 44,17, BK2,'^A',SPC2,'Select all',0
@@ -406,12 +412,14 @@ org 100h
        db 64,20, 'Invert',(SNK or 8),'I',0
        db 64,21, 'Slide',(SNK or 9),'S',0
        db 64,22, 'Flip',(SNK or 8),'X/Y',0
+       db 44, 7, 'Exit',0
+       db 44, 8, 'w/font',(SNK2),1,SHIFT_SYM,0
 
  ; Redrawn on TAB (depend on current box):
 
   loc_f_editbox:
        db 44,13, 'Draw',SNK1,'Space/',17,1,0C4h,1,0D9h,0
-       loc_formatted_count = 20
+       loc_formatted_count = 22
 
   loc_f_fontbox:
        db 44,13, 'Edit',0
@@ -426,14 +434,15 @@ org 100h
        .cut:      db 44,19, BK2,'^X',SPC2,'Cut',0
        .copy:     db 44,20, BK2,'^C',SPC2,'Copy',0
        .paste:    db 44,21, BK2,'^V',SPC2,'Paste',0
-       .revert:   db 44, 3, BK2,'^R',SPC,'eload',0
+       .revert:   db 44, 2, BK2,'^R',SPC,'eload',0
        .undo:     db 44,22, BK2,'^Z',SPC2,'Undo',0
-       .8_9_dot:  db 64, 6, '8/9-dot cell',SNK1,'F8',0
-       .dup_ln:   db 64, 4, 'Dup line',(SNK or 5),'F7',0
-       .ins_ln:   db 64, 3, 'Insert line',SNK2,'F6',0
-       .del_ln:   db 64, 2, 'Delete line',SNK2,'F5',0
+       .8_9_dot:  db 64, 5, '8/9-dot cell',SNK1,'F8',0
+       .lge:      db 64, 6, '+/- LineGr.',SNK1,1,SHIFT_SYM,'F8',0
+       .dup_ln:   db 64, 3, 'Dup line',(SNK or 5),'F7',0
+       .ins_ln:   db 64, 2, 'Insert line',SNK2,'F6',0
+       .del_ln:   db 64, 1, 'Delete line',SNK2,'F5',0
        .swap:     db 64,14, 'Swap chars',(SNK or 4),'W',0
-       loc_f_stateful_count = 13
+       loc_f_stateful_count = 14
 
 ;-----------------------------------------------------------------------------
 ;###############################  VARIABLES  #################################
@@ -470,7 +479,8 @@ align 2
    .currfont_ptr:  dw ?            ; POINTER to active font's structure
    .screen:        dw ? ;*         ; current screen (EDITOR)
    .preview:       dw ?            ; HI=curr, LO=backup / 0=no, 1=80c, -1=40c
-   .clock_mode_80: db ?            ; for flipping 9/8-dot mode (test bit 0)
+   .clock_mode_80: db ?            ; bit 0=clock mode: 0=9dot, 1=8dot   \
+   .attr_modectl:  db ?            ; bit 2=LGE for C0-DFh: 0=off, 1=on  /
    .pal_attrmap:   dw ? ;*         ; number of attr_map for current palette
    .palette:       dw ? ;*         ; current palette
    .currbox:       db ?            ; active box: 0=edit box, 1=charset box

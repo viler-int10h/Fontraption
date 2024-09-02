@@ -71,6 +71,10 @@
     mov    ax, draw_attr_asc0            ; How/what are we drawing?
     clc
     call   locate_n_draw_x2              ; Do it
+    mov    si, loc_attstr_esc2
+    mov    ax, draw_attr_asc0
+    clc
+    call   locate_n_draw_x2              ; and again for 2nd one
 
     call   update_box_legend             ; Box-specific caption+line+labels
 
@@ -839,6 +843,11 @@
     test   byte[state.is_bad_vga], 1
     call   bp
 
+  ; LGE: enabled if we're in 9-dot mode only
+
+    test   byte[state.clock_mode_80], 1
+    call   bp
+
   ; DUP LINE, INS LINE: enabled if current font is <32 lines tall
 
     test   byte[di], 100000b             ; DI -> current font (.height)
@@ -863,7 +872,7 @@
 @@: xor    al, ah
     call   bp
 
-    call   update_checkmark              ; update this too while we're at it
+    call   update_8_9_dot_hilite         ; update these too
     pop    es                            ; Restore previous I/O target
     ret
 
@@ -949,6 +958,8 @@
     pop    di  ;-2                       ; DI-> Scratch
     push   di  ;-3
     push   cx  ;-4
+    test   byte[state.attr_modectl], 4   ;      if B2=0 (LGE off), force BG
+    jz     @f                            ;          column 9
     mov    ah, [state.currchar]          ;      UGLY HACK IS UGLY
     and    ah, 0E0h                      ;      Are you a line-graphics char
     cmp    ah, 0C0h                      ;        w/a right extension?
@@ -1459,15 +1470,27 @@
     ret
 
 ;------------------------------------------------------------------------------
-  update_checkmark: ; updates 8/9 dots/cell checkmark according to state
+  update_8_9_dot_hilite: ; updates 8/9 dots/cell checkmark according to state
 ;------------------------------------------------------------------------------
     push   es                            ; I/O target = screen: ES -> VGA text
     call   screen_init_text_IO           ;     mode RAM, BX = attr_map index
     mov    si, loc_f_stateful.8_9_dot    ; where are we drawing?  right here
-    mov    ax, draw_checkmark            ; how/what are we drawing?
+    mov    ax, draw_8_9_dot_hilite       ; how/what are we drawing?
     clc
     call   locate_n_draw_x2              ; do it
     pop    es                            ; restore previous I/O target
+   ;ret                                  ; fall through: must update LGE too
+
+;------------------------------------------------------------------------------
+  update_lge_hilite:    ; updates Line Gr. Enable checkmark according to state
+;------------------------------------------------------------------------------
+    push   es                            ; I/O target = screen: ES -> VGA text
+    call   screen_init_text_IO           ;     mode RAM, BX = attr_map index
+    mov    si, loc_f_stateful.lge
+    mov    ax, draw_lge_hilite
+    clc
+    call   locate_n_draw_x2
+    pop    es
     ret
 
 ;-----------------------------------------------------------------------------
@@ -1541,7 +1564,7 @@
     ret
 
 ;-----------------------------------------------------------------------------
-  draw_checkmark: ; Draws 8/9-dot checkmark in appropriate location
+  draw_8_9_dot_hilite: ; Draws 8/9-dot checkmark in appropriate location
 ;-----------------------------------------------------------------------------
     inc    di                            ; let DI be the *attribute*
     mov    dx, di                        ;     location for 8 dots
@@ -1554,6 +1577,26 @@
 @@: test   byte[state.clock_mode_80], 1  ; are we in 9-dot mode?
     jnz    @f                            ; - no, go on
     xchg   dx, di                        ; - yes, switch 'em
+@@: stosb
+    xchg   dx, di
+    xchg   ah, al
+    stosb
+    ret
+
+;-----------------------------------------------------------------------------
+  draw_lge_hilite: ; Draws Line Grph. Enable checkmark in appropriate location
+;-----------------------------------------------------------------------------
+    inc    di                            ; let DI be the *attribute*
+    mov    dx, di                        ;     location for [+]
+    add    dx, 4                         ;     and DX for [-]
+    mov    al, [att.checkmark+bx]
+    mov    ah, [att.normal_right+bx]
+    test   byte[state.clock_mode_80], 1  ; are we in 9-dot mode?
+    jz     @f
+    ret                                  ; no; action disabled
+@@: test   byte[state.attr_modectl], 4   ; line graphics enabled?
+    jnz    @f                            ; - yes, go on
+    xchg   dx, di                        ; - no, switch 'em
 @@: stosb
     xchg   dx, di
     xchg   ah, al

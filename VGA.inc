@@ -104,19 +104,23 @@
     pop    ds  ;1;
     pop    es  ;0;
 
-  ; Disable blinking and cursor
+  ; Enable LGE, disable blinking + cursor, store attr. mode control register
 
     debug_prompt noblink
 
     cli
     mov    dx, 3DAh            ; read port 3DA (status) to put port 3C0 in
     in     al, dx              ;    the index-accept (not data-accept) state
-    mov    dl, 0C0h            ; Attribute address register
+    mov    dl, 0C0h            ; Attribute address/data write
     mov    al, 30h             ; Attribute Mode Control (idx 10h) OR bit 5(!)
     out    dx, al
-    mov    al, 00000100b       ; b7:   b6:   b5:   b4:  b3:   b2:  b1:   b0:
-    out    dx, al              ; P54S  8BIT  PPM   ---  BLINK LGE  MONO  GFX
-
+    inc    dx                  ; Attribute data read
+    in     al, dx              ;                        -     +
+    and    al, 11110111b       ; b7:   b6:   b5:   b4:  b3:   b2:  b1:   b0:
+    or     al, 00000100b       ; P54S  8BIT  PPM   ---  BLINK LGE  MONO  GFX
+    dec    dx                  ; Data write port
+    out    dx, al
+    mov    [state.attr_modectl], al
     debug_prompt nocursor
 
     call   vga_set_cursor.off
@@ -296,6 +300,26 @@
     ret
 
 ;-----------------------------------------------------------------------------
+  vga_set_lge:  ; Write out Line Graphics Enable bit (extend chars C0-DF)
+;
+; In:  CF set - force ON;   CF clear - use currently selected value
+;      state.attr_modectl: value of Attribute Mode Control register
+;      DX == 3??h ; DS == CS ; interrupts should be disabled
+;-----------------------------------------------------------------------------
+    push   dx
+    mov    dl, 0DAh            ; read port 3DA (status) to put port 3C0 in
+    in     al, dx              ;    the index-accept (not data-accept) state
+    mov    dl, 0C0h            ; Attribute address/data write
+    mov    al, 30h             ; Attribute Mode Control (idx 10h) OR bit 5(!)
+    out    dx, al              ;    index select
+    mov    al, [state.attr_modectl]
+    jnc    @f
+    or     al, 4               ; force bit 2 on if carry flag set
+@@: out    dx, al
+    pop    dx
+    ret
+
+;-----------------------------------------------------------------------------
   vga_upload_font = _start_UF ; Upload ACTIVE user font to respective VGA bank
 ;
 ; In:  CF = Displace (to vertically center <16-line fonts)? Clear=no; set=yes
@@ -340,10 +364,10 @@
     mov    bl, dl
 
     mov    cx, 2
-  .do5chars:                   ;-----OUTER LOOP (x2: UI16 font & UI8 font)-- -
+  .do1size:                    ;-----OUTER LOOP (x2: UI16 font & UI8 font)-- -
     push   cx                  ;
     mov    si, ui_8dot_grids   ;
-    mov    cl, 5               ;
+    mov    cl, NUM_MOD_CHARS   ;
   .do1char:                    ;   ,-------MIDDLE LOOP (x4 chars)---------- -
     push   cx                  ;   ;
     mov    cl, 16              ;   ;
@@ -358,16 +382,20 @@
     stosb                      ;   ;   ;  write glyph scanline
     loop   .do_copy            ;   ;   `---------------------------------- -
     add    di, 16              ;   ; skip to next char pos in VGA RAM
-    pop    cx                  ;   ;
+    cmp    di, (MODIFY_UI8 \   ;   ;
+                + 5*32)        ;   ; 'fix' for shift symbol vertical position
+    jne    @f                  ;   ; (ugly, but won't be here for very long)
+    sub    di, 3               ;   ;
+@@: pop    cx                  ;   ;
     loop   .do1char            ;   `--------------------------------------- -
     pop    cx                  ;
-    mov    byte[si-10], dh     ; modify tab_border character: in iteration #1,
-    mov    byte[si-13], dl     ;     convert UI16 to UI8; in iteration #2,
+    mov    byte[si-26], dh     ; modify tab_border character: in iteration #1,
+    mov    byte[si-29], dl     ;     convert UI16 to UI8; in iteration #2,
     xchg   dl, dh              ;     <= make it UI16 again for future calls
     mov    di, MODIFY_UI8      ; target offset in UI8 font for iteration #2
-    loop   .do5chars           ;-------------------------------------------- -
+    loop   .do1size            ;-------------------------------------------- -
 
-    mov    di, MODIFY_UI16+(5*32)        ; do the drive icon
+    mov    di, MODIFY_UI16+(NUM_MOD_CHARS*32) ; do the drive icon
     push   di
     mov    cl, 3*(32/2)
     xor    ax, ax
@@ -399,8 +427,10 @@
     db     0FFh, 00h,0AAh, 00h,0AAh, 00h,0AAh, 00h        ; 203d (GUIDE2)
     db     0AAh, 00h,0AAh, 00h,0AAh, 00h,0AAh, 00h
     db     0,0,0,0,0,0, 0AAh, 0,0,0,0,0,0,0,0,0           ; 204d (TAB_BORDER)
+    db     0,0,0,010h,038h,07Ch,0FEh,038h,038h,038h,038h  ; 205d (SHIFT_SYM)
+    db     0,0,0,0,0
 
-    db     07Fh,060h,060h,060h,06Fh,060h,060h,060h,07Fh   ; drive icon
+    db     07Fh,060h,060h,060h,06Fh,060h,060h,060h,07Fh   ; 206d (drive icon)
     db     0FFh,000h,000h,07Eh,0FFh,07Eh,000h,000h,0FFh
     db     0FEh,006h,036h,006h,0F6h,006h,006h,006h,0FEh
 
@@ -745,6 +775,8 @@
 @@: lodsw
     out    dx, ax
     loop   @b
+    clc                        ; LGE bit: use current user-selected state
+    call   vga_set_lge
     sti
 
   ; Now... do we need to switch to 40 or 80 columns?
@@ -783,16 +815,19 @@
     pop    ax
     mov    [bx], ax
 
-  ; Re-protect the SNOWFLAKE registers and get out
+  ; Re-protect the SNOWFLAKE registers and set LGE
+  ; (The next routines called will deal with the other CRTC regs if any)
 
     pop    si  ;1;                       ; SW1
     pop    dx  ;0;                       ; CRTC address
     cli
     lodsw                                ; r11h : VERTICAL RETRACE END
     or     ah, 10000000b                 ; set bit 7 (CRTC protect bit)
-    out    dx, ax                        ; no need to worry about the other
-    sti                                  ;     registers - the next routines
-    ret                                  ;     called will deal with them
+    out    dx, ax
+    stc                                  ; LGE: force ON
+    call   vga_set_lge
+    sti
+    ret
 
 ;-----------------------------------------------------------------------------
   vga_crtc_horiz_out:  ; Update CRTC horizontal control regs (0-5)
