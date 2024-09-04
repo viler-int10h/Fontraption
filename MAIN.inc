@@ -275,7 +275,7 @@
   ; Temporarily disable the video and draw initial screen contents
 
   IF ~DEBUGMODE
-    mov    ah, [state.clock_mode_80]
+    mov    ah, [state.clkmode80]
     or     ah, 20h                       ; bit 5 = screen disable
     mov    al, 1                         ; Clocking Mode Register (Index 01h)
     mov    dx, 3C4h
@@ -306,7 +306,7 @@
 
     debug_prompt vid_en
 
-    mov    ah, [state.clock_mode_80]
+    mov    ah, [state.clkmode80]
     mov    al, 1                         ; Clocking Mode Register (Index 01h)
     mov    dx, 3C4h
     out    dx, ax

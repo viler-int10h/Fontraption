@@ -59,6 +59,15 @@
 
     mov    byte[state.screen], SCR_FILES
     call   vga_switch_screen             ; switch them screens
+    push   es  ;2;
+    mov    es, [seg_vga]
+    call   vga_init_font_IO
+    mov    ds, [seg_top]
+    memcp  top.8x16+32*128, 32*128, 512  ; reset UI16 font (VRAM_UI16_FONT=0)
+    call   vga_end_font_IO
+    push   cs
+    pop    ds
+    pop    es  ;1;
     pop    bp  ;0;                       ; get that string-length back
     call   file_readdir                  ; go get a directory listing
     call   update_filedlg                ; ...and show it

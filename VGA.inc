@@ -115,10 +115,10 @@
     mov    al, 30h             ; Attribute Mode Control (idx 10h) OR bit 5(!)
     out    dx, al
     inc    dx                  ; Attribute data read
-    in     al, dx              ;                        -     +
+    in     al, dx
     and    al, 11110111b       ; b7:   b6:   b5:   b4:  b3:   b2:  b1:   b0:
     or     al, 00000100b       ; P54S  8BIT  PPM   ---  BLINK LGE  MONO  GFX
-    dec    dx                  ; Data write port
+    dec    dx                  ; Data write port        ^-    ^+
     out    dx, al
     mov    [state.attr_modectl], al
     debug_prompt nocursor
@@ -171,7 +171,7 @@
     jz     @f                            ; - 0? all clear
     or     al, cl                        ; - 1? force 8-dot/char clock mode
     inc    byte[state.is_bad_vga]        ;      + indicate problem
-@@: mov    [state.clock_mode_80], al
+@@: mov    [state.clkmode80], al
 
   ; Modify UI fonts and upload our two user fonts
 
@@ -260,7 +260,7 @@
 ; In:   state.preview - says if this is preview-related. If so, the switch is
 ;                       40-col/80-col; otherwise switch 8/9 dots/cell
 ;-----------------------------------------------------------------------------
-    mov    si, state.clock_mode_80       ; Grab our value
+    mov    si, state.clkmode80           ; Grab our value
     mov    di, si
     lodsb
     test   byte[state.preview+1], 0FFh   ; We goin' in/out of preview?
@@ -335,20 +335,31 @@
     jae    @b                            ; Don't displace >=16-line fonts
     sub    al, 16
     sar    al, 1                         ; AL = -padding (16-height)/2 + 1(^*)
-.o: mov    di, VRAM_FONT1                ; User font 1 goes here
+.o: push   es  ;-1
+    push   si  ;-2
+    mov    di, VRAM_FONT1                ; User font 1 goes here
     cmp    si, font2                     ; Should we do user font 2 instead?
     jb     @f
     mov    di, VRAM_FONT2                ; Yep - user font 2 goes here
 @@: cbw
     xchg   bx, ax                        ; BX = negative(!) padding
     lea    si, [si+bx+font.data]         ; SI-> *padded* (displaced) font data
-    push   es
     mov    es, [seg_vga]
     call   vga_init_font_IO              ; Set up VGA state for font I/O
     mov    cx, 4096
     rep    movsw                         ; DO IT
-    call   vga_end_font_IO               ; Restore VGA state to normal I/O
-    pop    es
+    pop    si  ;-1
+    test   word[state.clkmode80], 104h   ; 9-dot with LGE off?
+    jnz    .e
+    mov    cx, 512
+    lea    si, [si+bx+font.data+32*192]  ;    prep C0-DF only
+    mov    di, VRAM_UI16_FONT+32*128
+    test   byte[state.screen], 1         ;    50-line screen?
+    jz     @f
+    mov    di, VRAM_UI8_FONT+32*128
+@@: rep    movsw
+.e: call   vga_end_font_IO               ; Restore VGA state to normal I/O
+    pop    es  ;0
     ret
 
 ;-----------------------------------------------------------------------------
@@ -359,7 +370,7 @@
     mov    di, MODIFY_UI16               ; target offset in UI16 font
 
     call   vga_init_font_IO              ; set up VGA state for font I/O
-    mov    ah, [state.clock_mode_80]
+    mov    ah, [state.clkmode80]
     mov    dx, 00AAh
     mov    bl, dl
 

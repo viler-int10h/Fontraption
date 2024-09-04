@@ -436,6 +436,8 @@
     call   update_lbox_grid
     call   update_tabs
     call   vga_switch_screen             ; everything ready? pull the switch
+    stc
+    call   vga_upload_font               ; centered (needed for +/-LGE)
     ret
 
 ;-----------------------------------------------------------------------------
@@ -1329,7 +1331,7 @@
 ;-----------------------------------------------------------------------------
   ed_dot_mode: ; Flip VGA clock mode between 8/9 dots/cell, update highlight
 ;-----------------------------------------------------------------------------
-;@: xor    ah, [state.clock_mode_80]     ; is the new mode same as now?
+;@: xor    ah, [state.clkmode80]         ; is the new mode same as now?
 ;   test   ah, 1                         ; let's have a look, here's how
 ;   jz     @f                            ; new value? - yep, allow
 ;   ret                                  ; the same? - do nothing, ciao
@@ -1349,7 +1351,7 @@
   ed_lge: ; Flip LGE bit (extend C0h-DFh in 9-dot mode), update highlight
 ;           (actual VGA register isn't written until preview mode)
 ;-----------------------------------------------------------------------------
-    mov    si, state.clock_mode_80
+    mov    si, state.clkmode80
     lodsw                                ; AL = clock mode, AH = attr modectl
     test   al, 1                         ; disallow if in 8-dot mode
     jz     @f
@@ -1357,6 +1359,9 @@
 @@: xor    ah, 4                         ; flip bit 2
     mov    byte[si-1], ah                ; store value
     call   update_lge_hilite
+    stc
+    call   vga_upload_font               ; (centered)
+    call   update_rbox_in                ; for C0-DFh
     call   update_lbox_char              ; in case 9th col changes for C0-DF
     ret
 

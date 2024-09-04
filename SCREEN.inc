@@ -845,7 +845,7 @@
 
   ; LGE: enabled if we're in 9-dot mode only
 
-    test   byte[state.clock_mode_80], 1
+    test   byte[state.clkmode80], 1
     call   bp
 
   ; DUP LINE, INS LINE: enabled if current font is <32 lines tall
@@ -916,7 +916,7 @@
     mov    si, editbox_OFF_att           ;        - nope, use inactive ones
 @@: mov    bp, state.chrmark_rows        ; BP-> row 0 of editbox mark
     mov    ah, 10000000b                 ; AH = current col/px (rotating mask)
-    mov    al, byte[state.clock_mode_80] ; AL = Bit0 = 0? 9-dot; = 1? 8-dot
+    mov    al, byte[state.clkmode80]     ; AL = Bit0 = 0? 9-dot; = 1? 8-dot
 
   .row:
     push   cx  ;-5
@@ -1053,7 +1053,7 @@
     push   bx                            ;      Save attrMap index
 
     mov    dl, byte[state.screen]        ; DL = 0? - ED25; 1? ED50
-    mov    dh, byte[state.clock_mode_80] ; DH = Bit0 = 0? 9-dot; = 1? 8-dot
+    mov    dh, byte[state.clkmode80]     ; DH = Bit0 = 0? 9-dot; = 1? 8-dot
     xor    ax, ax
     call   locate_lbox_cell              ; DI-> VRAM target
 @@: mov    si, [state.currfont_ptr]      ;      Point to current font
@@ -1109,7 +1109,7 @@
     push   es  ;1;                       ; I/O target = screen: ES -> VGA text
     call   screen_init_text_IO           ;     mode RAM, BX = attr_map index
 
-    mov    al, byte[state.clock_mode_80] ; bit0: 0->9-dot; 1->8-dot
+    mov    al, byte[state.clkmode80]     ; bit0: 0->9-dot; 1->8-dot
     and    ax, 1                         ; AX: =   "
     xchg   ax, bp                        ; BP: =   "
     test   byte[state.currbox], 1        ; Is editbox active?
@@ -1240,7 +1240,7 @@
     mov    di, VRAM_ED50+8*ROW+6*2       ; 50-line screen: r8,c6
     call   .do_it1
     mov    di, VRAM_ED25+4*ROW+8*2       ; 25-line screen: r4,c8 if 9-dot
-    test   byte[state.clock_mode_80], 1  ; 8-dot mode?
+    test   byte[state.clkmode80], 1      ; 8-dot mode?
     jz     .do_it2                       ; - nope, print already
     dec    di                            ; - yep, back up one cell
     dec    di                            ; ... fall through ...
@@ -1302,76 +1302,96 @@
 ; This has to be redone whenever the active font/screen is switched, AFTER
 ; state.screen is updated but BEFORE the start address is changed
 ;-----------------------------------------------------------------------------
-    push   es                            ; I/O target = screen: ES -> VGA text
+    push   es  ;-1                       ; I/O target = screen: ES -> VGA text
     call   screen_init_text_IO           ;     mode RAM, BX = attr_map index
-    push   bx                            ; save attrMap index
+    push   bx  ;-2                       ; save attrMap index
+    push   es  ;-3
+    push   ds
+    pop    es                            ; Draw to scartch RAM first for speed
+    mov    di, scratch
+    push   di  ;-4
+    push   di  ;-5
 
+    test   byte[state.currbox], 1        ; Attributes: is charset box active?
+    jz     @f                            ; nope - use inactive attributes
+    sub    bx, BOXINNER_ATTDIFF          ; yep  - switch to active
+@@: xor    ax, ax                        ; Write 256 chars w/plain content attr
+    mov    ah, [att.box_OFF_content+bx]
+    mov    cx, 256
+    push   cx  ;-6
+@@: stosw
+    inc    ax
+    loop   @b
+
+    mov    si, [state.currfont_ptr]      ; which font are we in?
+    add    si, font.changes              ; track modified chars w/ [si+bp]
+    xor    bp, bp
+    mov    al, [att.box_OFF_unsaved+bx]
+    pop    cx  ;-5
+    pop    di  ;-4
+    inc    di                            ; -> odd (attribute)
+    push   di  ;-5
+.u: test   byte[si+bp], 1                ; character is unsaved?
+    jz     @f                            ;    - nope, proceed
+    mov    byte[di], al                  ;    - yep, use attr
+@@: inc    bp
+    inc    di
+    inc    di
+    loop   .u
+
+    mov    si, state.fntmark             ; do we have a selection?
+    lodsb
+    or     al, al
+    jz     .h                            ;    - no: skip
+    lodsw                                ;    - yes: AL=start, AH=end
+    mov    cl, al                        ;      CX = first char
+    mov    di, cx
+    shl    di, 1
+    add    di, scratch
+    inc    di
+    sub    ah, al
+    mov    cl, ah
+    inc    cx                            ;      # of characters to mark
+    mov    al, [att.box_OFF_marked+bx]
+@@: stosb
+    inc    di
+    loop   @b
+.h: pop    di  ;-4                       ; character at cursor (hover)
+    mov    cl, [state.hoverchar]
+    mov    al, [att.box_OFF_currchar+bx]
+    shl    cx, 1
+    add    di, cx
+    stosb
+
+    test   byte[state.attr_modectl], 4   ; LGE on?
+    jnz    .w
+    mov    di, scratch+0C0h*2
+    mov    ax, 0840h
+    mov    cx, 32
+@@: xor    word[di], ax
+    inc    di
+    inc    di
+    loop   @b
+
+  ; Finished drawing in scratch RAM - copy to the screen:
+
+.w: pop    si  ;-3                       ; SI-> Scratch
+    pop    es  ;-2                       ;      Now write to VGA
     mov    di, VRAM_ED25+5*ROW+25*2
     test   byte[state.screen], 1         ; 50-line screen?
     jz     @f
     mov    di, VRAM_ED50+10*ROW+22*2
-@@: test   byte[state.currbox], 1        ; is charset box active?
-    jz     @f                            ; nope - use inactive attributes
-    sub    bx, BOXINNER_ATTDIFF          ; yep  - switch to active
-@@: mov    ah, [att.box_OFF_content+bx]  ; i- Initial attr
-    mov    dl, [att.box_OFF_marked+bx]
-    mov    dh, [att.box_OFF_unsaved+bx]
-    mov    cl, [att.box_OFF_currchar+bx]
-    mov    bl, [state.fntmark_start]     ; track mark (selection) start
-    mov    bh, ah  ;content attr.        ; now we can reuse BH (backup)
-    mov    SL, cl  ;currchar attr.       ; use scratch "register"
-;   mov    cx, 255                       ;    .--   CH=0, CL=255
-;   xor    ch, bl                        ;    |     CH=0 if start=0 (A)
-;   xor    cl, [state.fntmark_end]       ;  UGLY    CL=0 if end=255 (B)
-;   or     ch, cl                        ;  HACK    CH=0 if (A)and(B)
-;   jnz    @f                            ;    |     so if CH=0... set
-;   mov    dh, dl                        ;    `--   unsaved=marked attr
-;@@:
-    mov    SH, dh  ;unsaved/marked attr. ; use scratch "register"
-    mov    si, [state.currfont_ptr]      ; which font are we in?
-    add    si, font.changes              ; track modified chars w/ [si+bp]
-    xor    bp, bp
-    xor    al, al                        ; char counter
-    mov    cx, 16
-
-.r: push   cx
+@@: mov    cx, 16
+@@: push   cx
     mov    cl, 16
-.c: test   byte[state.fntmark], 1        ; is there even an active mark?
-    jz     .u                            ;   - no; just check if unsaved
-
-    cmp    al, bl                        ; start marking?
-
-    jb     @f                            ;   - nope, go on
-    xchg   bh, dl                        ;   - yep, swap Content/Marked attrs;
-    mov    bl, [state.fntmark_end]       ;     next tests will be for mark END
-    mov    dh, bh                        ;     till then, disregard unsaved +
-    inc    bl                            ;     include end char within mark;
-    jnz    @f                            ;     0 (end=255)? force unsaved to
-    mov    SH, dl                        ;     show as marked from now on
-@@: cmp    al, bl                        ; end marking?
-    jb     .u                            ;   - nope, go on (check if unsaved)
-    mov    dl, bh                        ;   - yep, use Content attr till end
-    mov    dh, SH                        ;     + restore attr for unsaved char
-.u: test   byte[si+bp], 1                ; current char unsaved?
-    jz     @f                            ;   - nope, proceed
-    mov    ah, dh                        ;   - yep, show it
-    jmp    short .ccc                    ;       just check current char
-@@: mov    ah, bh                        ; use attribute computed above
-    .ccc:
-    cmp    al, [state.hoverchar]         ; "hover" character?
-    jne    @f                            ;   - no, end the damn checks already
-    mov    ah, SL                        ;   - yes, use appropriate attr
-@@: stosw                                ; do it
-    inc    al                            ; next char
-    inc    bp                            ; track changes
-    loop   .c                            ; next column
+    rep    movsw
     add    di, (80-16)*2
     pop    cx
-    loop   .r
-
-    pop    bx                            ; restore attrMap index
-    pop    es                            ; restore previous I/O target
+    loop   @b
+    pop    bx  ;-1                       ; restore attrMap index
+    pop    es  ;0                        ; restore previous I/O target
     ret
+
 
 ;-----------------------------------------------------------------------------
   update_rbox_out: ; updates font box border + rulers according to state
@@ -1574,7 +1594,7 @@
     test   byte[state.is_bad_vga], 1     ; 9-dot allowed?
     jz     @f
     mov    ah, [att.disabled+bx]
-@@: test   byte[state.clock_mode_80], 1  ; are we in 9-dot mode?
+@@: test   byte[state.clkmode80], 1      ; are we in 9-dot mode?
     jnz    @f                            ; - no, go on
     xchg   dx, di                        ; - yes, switch 'em
 @@: stosb
@@ -1584,14 +1604,14 @@
     ret
 
 ;-----------------------------------------------------------------------------
-  draw_lge_hilite: ; Draws Line Grph. Enable checkmark in appropriate location
+  draw_lge_hilite: ; Draws Line Gfx Enable checkmark in appropriate location
 ;-----------------------------------------------------------------------------
-    inc    di                            ; let DI be the *attribute*
+    add    di, 13                        ; "+/-" (attribute)
     mov    dx, di                        ;     location for [+]
     add    dx, 4                         ;     and DX for [-]
     mov    al, [att.checkmark+bx]
     mov    ah, [att.normal_right+bx]
-    test   byte[state.clock_mode_80], 1  ; are we in 9-dot mode?
+    test   byte[state.clkmode80], 1      ; are we in 9-dot mode?
     jz     @f
     ret                                  ; no; action disabled
 @@: test   byte[state.attr_modectl], 4   ; line graphics enabled?

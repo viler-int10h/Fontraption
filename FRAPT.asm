@@ -437,7 +437,7 @@ org 100h
        .revert:   db 44, 2, BK2,'^R',SPC,'eload',0
        .undo:     db 44,22, BK2,'^Z',SPC2,'Undo',0
        .8_9_dot:  db 64, 5, '8/9-dot cell',SNK1,'F8',0
-       .lge:      db 64, 6, '+/- LineGr.',SNK1,1,SHIFT_SYM,'F8',0
+       .lge:      db 64, 6, 'Col 9 +/-',(SNK or 3),1,SHIFT_SYM,'F8',0
        .dup_ln:   db 64, 3, 'Dup line',(SNK or 5),'F7',0
        .ins_ln:   db 64, 2, 'Insert line',SNK2,'F6',0
        .del_ln:   db 64, 1, 'Delete line',SNK2,'F5',0
@@ -479,7 +479,7 @@ align 2
    .currfont_ptr:  dw ?            ; POINTER to active font's structure
    .screen:        dw ? ;*         ; current screen (EDITOR)
    .preview:       dw ?            ; HI=curr, LO=backup / 0=no, 1=80c, -1=40c
-   .clock_mode_80: db ?            ; bit 0=clock mode: 0=9dot, 1=8dot   \
+   .clkmode80:     db ?            ; bit 0=clock mode: 0=9dot, 1=8dot   \
    .attr_modectl:  db ?            ; bit 2=LGE for C0-DFh: 0=off, 1=on  /
    .pal_attrmap:   dw ? ;*         ; number of attr_map for current palette
    .palette:       dw ? ;*         ; current palette
