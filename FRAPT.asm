@@ -325,11 +325,13 @@ org 100h
     dw att.prog_name
     db 'Fontraption ',0
     dw att.version
-    db ' v1.12',0
+  .ver:
+    db ' v1.2',0
+    VER_STRLEN = $-.ver-1
     dw att.ver_separator
     db ' þ ',0
     dw att.ver_date
-    db '02/2024 ',0
+    db '09/2024 ',0
 
 ; Some dual-screen locations, no strings attached- - - - - - - - - - - - - - -
 
@@ -437,7 +439,7 @@ org 100h
        .revert:   db 44, 2, BK2,'^R',SPC,'eload',0
        .undo:     db 44,22, BK2,'^Z',SPC2,'Undo',0
        .8_9_dot:  db 64, 5, '8/9-dot cell',SNK1,'F8',0
-       .lge:      db 64, 6, 'Col 9 +/-',(SNK or 3),1,SHIFT_SYM,'F8',0
+       .lge:      db 64, 6, 'LineGr +/-',SNK2,1,SHIFT_SYM,'F8',0
        .dup_ln:   db 64, 3, 'Dup line',(SNK or 5),'F7',0
        .ins_ln:   db 64, 2, 'Insert line',SNK2,'F6',0
        .del_ln:   db 64, 1, 'Delete line',SNK2,'F5',0

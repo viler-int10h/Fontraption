@@ -14,7 +14,7 @@
    þÞÜ-      Þ ß        Ø  þ               Ø     ÄÛ  |           Û±
     ÛÜ-      Ø                                    ×               Þ
     ²Ü-        úù[  F O N T R A P T I O N  ]ùú  Ø   ùCþRþTþCù   À_
-    Þ               úù[  v1.12 - 2/2024  ]ùú
+    Þ               úù[  v1.2 - 9/2024  ]ùú
     Ø
 
 
@@ -235,10 +235,18 @@ needed.  But, for the sake of completeness...
       F8:             Select the width of the character cell, either 8 or 9
                       pixels (see "DOSBox Usage Notes" above if this option is
                       greyed out).
-                      This applies to the display on-screen, and is reflected
-                      in the edit box.  In 9-dot mode the ninth column isn't
-                      editable: the VGA blanks it out for most characters; for
-                      the box/block chars at C0-DF, it duplicates the 8th.
+                      This applies to the on-screen display, and is reflected
+                      in the edit box.  The 9th column isn't editable; its
+                      content is determined by the VGA hardware (see below).
+
+      Shift+F8:       Line Graphics - in 9-dot mode, control whether chars C0-
+                      DF (192-223) extend into the 9th column of the character
+                      cell.
+                      For other characters column 9 is always blank, but the
+                      VGA normally makes an exception for this range, where it
+                      duplicates column 8 (to get continuous line-drawing
+                      graphics).  This can be disabled, which is good for
+                      fonts *without* line-drawing characters at C0-DF.
 
       F9:             Palette - choose from the list to change Fontraption's
                       color scheme.  Some variety for your eyeballs :)
@@ -318,7 +326,7 @@ needed.  But, for the sake of completeness...
                       either font, you'll be reminded and get the chance to
                       chicken out.
 
-      LShift+ESC:     As above, but also retains the active font on the screen
+      Shift+ESC:      As above, but also retains the active font on the screen
                       after you quit to DOS (like FONTEDIT).
 
 
@@ -347,11 +355,20 @@ needed.  But, for the sake of completeness...
                                VERSION HISTORY
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+ v1.2 (2024-09-05):
+   + Added Line Graphics setting in 9-dot mode (Shift+F8; controls whether
+     characters C0-DF extend into the 9th column)
+   + 9-dot mode is always available if DOSBox-X is detected
+   + Lets you cut/copy one character at the cursor, without selecting a range
+   * Fixed visual glitch with character range selection in certain cases
+   * Fixed filename sort order in file browser (dots are disregarded)
+   * Made minor VGA tweaks and optimizations
+
  v1.12 (2024-02-15):
-   * Add MIT license
+   + Add MIT license
    * Bugfix: supports the PS/2 Model P70 plasma display
    * Bugfix: should now work on VirtualBox 6.x
-   * Add debug option to single-step VGA initialization (set DEBUGMODE to 1)
+   + Add debug option to single-step VGA initialization (set DEBUGMODE to 1)
 
  v1.11 (2020-09-27):
    * Bugfix: undo works correctly after swapping characters

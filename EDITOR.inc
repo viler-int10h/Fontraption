@@ -1777,7 +1777,7 @@
   .can_quit:                             ; QUIT
     mov    ax, 3
     int    10h
-    test   byte[state.tw], 2             ; was Left Shift pressed w/ESC?
+    test   byte[state.tw], 3             ; was Shift pressed w/ESC?
     jz     @f                            ; nah:, skip the font-setting
 
   ; Leave last active user font on screen

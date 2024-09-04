@@ -299,7 +299,7 @@
     call   draw_attr_asc0
     mov    al, 0B3h                      ; '³' vertical line
     stosb
-    mov    di, 62*2                      ; spaces before version string
+    mov    di, (68-VER_STRLEN)*2         ; spaces before version string
     stosb
     inc    di
     mov    cl, 3
@@ -1606,7 +1606,7 @@
 ;-----------------------------------------------------------------------------
   draw_lge_hilite: ; Draws Line Gfx Enable checkmark in appropriate location
 ;-----------------------------------------------------------------------------
-    add    di, 13                        ; "+/-" (attribute)
+    add    di, 15                        ; "+/-" (attribute)
     mov    dx, di                        ;     location for [+]
     add    dx, 4                         ;     and DX for [-]
     mov    al, [att.checkmark+bx]
