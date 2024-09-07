@@ -59,6 +59,8 @@ To run this correctly in DOSBox, you'll want to do the following:
    DOSBox codebase fixes many issues related to VGA font widths, aspect
    correction, scaling, cursor handling, and so on.
 
+   DOSBox-X works well too (just set char9 = true in the configuration).
+
 2. Set "machine" to "vgaonly" in your DOSBox config file, otherwise 9-dots-
    per-column mode (F8) is disabled.  9 dots is the default with real (S)VGA
    hardware, and in DOSBox's "vgaonly" mode, but the "svga"/"vesa" machines
@@ -66,9 +68,7 @@ To run this correctly in DOSBox, you'll want to do the following:
 
    If you REALLY want to, you can force Fontraption to allow 9-dot mode
    regardless of DOSBox's machine type, by pressing Ctrl+Alt+9.  Just don't
-   expect things to look right if you do that - this option exists in case
-   DOSBox changes its behavior in the future, or for certain forks (like
-   DOSBox-X) that control it with a separate config option.
+   expect things to look right if you do that.
 
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -279,9 +279,9 @@ needed.  But, for the sake of completeness...
 
       Ctrl+D:         Deselect - clears the selection in the active box
 
-      Ctrl+X:         Cut selected block/range to the clipboard
+      Ctrl+X:         Cut region or character/range to the clipboard
 
-      Ctrl+C:         Copy selected block/range to the clipboard
+      Ctrl+C:         Copy region or character/range to the clipboard
 
       Ctrl+V:         Paste from clipboard - may also be done between the
                       two fonts (even with different heights), but only if the
@@ -366,8 +366,8 @@ needed.  But, for the sake of completeness...
 
  v1.12 (2024-02-15):
    + Add MIT license
-   * Bugfix: supports the PS/2 Model P70 plasma display
-   * Bugfix: should now work on VirtualBox 6.x
+   * Bugfix: supports the PS/2 Model P70 plasma display - thanks to Sompi,
+     Swarm, Lys for reporting/testing
    + Add debug option to single-step VGA initialization (set DEBUGMODE to 1)
 
  v1.11 (2020-09-27):
@@ -389,4 +389,3 @@ needed.  But, for the sake of completeness...
 
  Written by VileR     /   THANKS: anormal, genju, harekiet, hell mood, keropi,
 (viler@int10h.org)   /     krille, maze, reenigne, ripsaw8080, scali, trixter
-
